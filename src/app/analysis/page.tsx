@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Search, RefreshCcw, X, Camera, Heart, MessageCircle, ExternalLink, Trophy } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 
@@ -164,11 +164,20 @@ export default function InstagramAnalysisPage() {
 
   const removeAccount = (username: string) => setAccounts(prev => prev.filter(a => a.username !== username));
 
-  const getChartData = () => {
+  const getDailyChartData = () => {
     if (accounts.length === 0) return [];
-    return accounts[0].timeSeries.map((d: any, i: number) => {
+    return accounts[0].dailyChart.map((d: any, i: number) => {
       const entry: any = { date: d.date };
-      accounts.forEach(acc => { if (acc.timeSeries[i]) entry[acc.username] = acc.timeSeries[i].likes; });
+      accounts.forEach(acc => { if (acc.dailyChart[i]) entry[acc.username] = acc.dailyChart[i].likes; });
+      return entry;
+    });
+  };
+
+  const getMonthlyChartData = () => {
+    if (accounts.length === 0) return [];
+    return accounts[0].monthlyChart.map((d: any, i: number) => {
+      const entry: any = { date: d.date };
+      accounts.forEach(acc => { if (acc.monthlyChart[i]) entry[acc.username] = acc.monthlyChart[i].likes; });
       return entry;
     });
   };
@@ -255,27 +264,59 @@ export default function InstagramAnalysisPage() {
         {/* トップ3投稿セクション */}
         <TopPostsSection accounts={accounts} />
 
-        {/* エンゲージメントチャート */}
+        {/* 日次エンゲージメントチャート */}
         {accounts.length > 0 && (
-          <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '24px', border: '1px solid #F1F5F9', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+          <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '24px', border: '1px solid #F1F5F9', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', marginBottom: '32px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
               <div style={{ width: '40px', height: '40px', backgroundColor: '#FDF2F8', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <Camera size={20} color="#EC4899" />
               </div>
-              <h3 style={{ fontWeight: '800', fontSize: '20px', color: '#0F172A', margin: 0 }}>直近投稿のエンゲージメント推移（いいね数）</h3>
+              <div>
+                <h3 style={{ fontWeight: '800', fontSize: '20px', color: '#0F172A', margin: 0 }}>日次エンゲージメント推移（直近30日）</h3>
+                <p style={{ fontSize: '12px', color: '#94A3B8', margin: '2px 0 0' }}>投稿がない日は 0 と表示されます。1日に複数投稿がある場合は合算しています。</p>
+              </div>
             </div>
             <div style={{ height: '400px', width: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={getChartData()}>
+                <LineChart data={getDailyChartData()}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
                   <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94A3B8' }} dy={10} />
                   <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94A3B8' }} />
                   <Tooltip contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', padding: '12px' }} itemStyle={{ fontWeight: '700' }} />
                   <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
                   {accounts.map(acc => (
-                    <Line key={acc.username} type="monotone" dataKey={acc.username} stroke={acc.color} strokeWidth={4} dot={{ r: 6, fill: acc.color, strokeWidth: 2, stroke: 'white' }} activeDot={{ r: 8 }} />
+                    <Line key={acc.username} type="monotone" dataKey={acc.username} stroke={acc.color} strokeWidth={4} dot={{ r: 4, fill: acc.color, strokeWidth: 2, stroke: 'white' }} activeDot={{ r: 6 }} connectNulls={true} />
                   ))}
                 </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        )}
+
+        {/* 月次エンゲージメントチャート */}
+        {accounts.length > 0 && (
+          <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '24px', border: '1px solid #F1F5F9', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
+              <div style={{ width: '40px', height: '40px', backgroundColor: '#FDF2F8', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                <Trophy size={20} color="#EC4899" />
+              </div>
+              <div>
+                <h3 style={{ fontWeight: '800', fontSize: '20px', color: '#0F172A', margin: 0 }}>月次エンゲージメント合計（今月 vs 先月）</h3>
+                <p style={{ fontSize: '12px', color: '#94A3B8', margin: '2px 0 0' }}>各月の総いいね数を比較しています（今月は途中経過を含みます）。</p>
+              </div>
+            </div>
+            <div style={{ height: '400px', width: '100%' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={getMonthlyChartData()}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#F1F5F9" />
+                  <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94A3B8' }} dy={10} />
+                  <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94A3B8' }} />
+                  <Tooltip cursor={{ fill: '#F8FAFC' }} contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)', padding: '12px' }} itemStyle={{ fontWeight: '700' }} />
+                  <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px' }} />
+                  {accounts.map(acc => (
+                    <Bar key={acc.username} dataKey={acc.username} fill={acc.color} radius={[6, 6, 0, 0]} barSize={40} />
+                  ))}
+                </BarChart>
               </ResponsiveContainer>
             </div>
           </div>

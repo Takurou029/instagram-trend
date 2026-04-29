@@ -35,12 +35,40 @@ export async function GET(request: Request) {
       avgComments: Math.round(reels.reduce((s, m) => s + (m.comments_count || 0), 0) / (reels.length || 1)),
     };
 
-    // --- 時系列：直近10件（古い順） ---
-    const timeSeries = reels.slice(0, 10).reverse().map(m => ({
-      date:     new Date(m.timestamp).toLocaleDateString('ja-JP', { month: '2-digit', day: '2-digit' }),
-      likes:    m.like_count    || 0,
-      comments: m.comments_count || 0,
-    }));
+    // --- 新しい集計ロジック：日次（直近30日） ---
+    const dailyChart: any[] = [];
+    const now = new Date();
+    for (let i = 29; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(now.getDate() - i);
+      const dateStr = d.toLocaleDateString('ja-JP', { month: '2-digit', day: '2-digit' });
+      const fullDateStr = d.toISOString().split('T')[0]; // YYYY-MM-DD
+      
+      // その日の投稿を合算
+      const dayLikes = reels
+        .filter(m => m.timestamp.startsWith(fullDateStr))
+        .reduce((sum, m) => sum + (m.like_count || 0), 0);
+      
+      dailyChart.push({ date: dateStr, likes: dayLikes });
+    }
+
+    // --- 新しい集計ロジック：月次（今月と先月） ---
+    const monthlyChart: any[] = [];
+    const currentMonth = now.toISOString().slice(0, 7); // YYYY-MM
+    const lastMonthDate = new Date();
+    lastMonthDate.setMonth(now.getMonth() - 1);
+    const lastMonth = lastMonthDate.toISOString().slice(0, 7); // YYYY-MM
+
+    [lastMonth, currentMonth].forEach(month => {
+      const monthLikes = reels
+        .filter(m => m.timestamp.startsWith(month))
+        .reduce((sum, m) => sum + (m.like_count || 0), 0);
+      
+      monthlyChart.push({ 
+        date: month.replace('-', '/'), 
+        likes: monthLikes 
+      });
+    });
 
     // --- トップ3投稿：全メディアをいいね数降順でソート ---
     const topPosts = [...media]
@@ -65,7 +93,8 @@ export async function GET(request: Request) {
       username:  userData.username,
       avatar:    userData.profile_picture_url,
       stats,
-      timeSeries,
+      dailyChart,
+      monthlyChart,
       topPosts,
     });
 
