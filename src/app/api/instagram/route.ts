@@ -10,7 +10,7 @@ export async function GET(request: Request) {
   }
 
   try {
-    const mediaFields = 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count';
+    const mediaFields = 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count,video_view_count';
     const discoveryUrl = `https://graph.facebook.com/v19.0/${businessId}?fields=business_discovery.username(${username}){id,name,username,profile_picture_url,follows_count,followers_count,media_count,media.limit(100){${mediaFields}}}&access_token=${accessToken}`;
 
     const res  = await fetch(discoveryUrl);
@@ -45,11 +45,15 @@ export async function GET(request: Request) {
       const fullDateStr = d.toISOString().split('T')[0]; // YYYY-MM-DD
       
       // その日の投稿を合算
-      const dayLikes = reels
+      const dayData = reels
         .filter(m => m.timestamp.startsWith(fullDateStr))
-        .reduce((sum, m) => sum + (m.like_count || 0), 0);
+        .reduce((acc, m) => {
+          acc.likes += (m.like_count || 0);
+          acc.views += (m.video_view_count || 0);
+          return acc;
+        }, { likes: 0, views: 0 });
       
-      dailyChart.push({ date: dateStr, likes: dayLikes });
+      dailyChart.push({ date: dateStr, ...dayData });
     }
 
     // --- 新しい集計ロジック：月次（今月と先月） ---
@@ -60,13 +64,17 @@ export async function GET(request: Request) {
     const lastMonth = lastMonthDate.toISOString().slice(0, 7); // YYYY-MM
 
     [lastMonth, currentMonth].forEach(month => {
-      const monthLikes = reels
+      const monthData = reels
         .filter(m => m.timestamp.startsWith(month))
-        .reduce((sum, m) => sum + (m.like_count || 0), 0);
+        .reduce((acc, m) => {
+          acc.likes += (m.like_count || 0);
+          acc.views += (m.video_view_count || 0);
+          return acc;
+        }, { likes: 0, views: 0 });
       
       monthlyChart.push({ 
         date: month.replace('-', '/'), 
-        likes: monthLikes 
+        ...monthData 
       });
     });
 
@@ -85,6 +93,7 @@ export async function GET(request: Request) {
         permalink: m.permalink,
         likes:     m.like_count     || 0,
         comments:  m.comments_count || 0,
+        views:     m.video_view_count || 0,
         timestamp: m.timestamp,
       }));
 
