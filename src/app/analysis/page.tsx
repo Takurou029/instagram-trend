@@ -129,6 +129,15 @@ function TopPostsSection({ accounts }: { accounts: any[] }) {
                 </div>
               )}
             </div>
+            {/* データ参照期間の注釈 */}
+            <div style={{ marginTop: '24px', paddingTop: '16px', borderTop: '1px solid #F1F5F9', textAlign: 'center' }}>
+              <p style={{ fontSize: '12px', color: '#94A3B8', margin: 0 }}>
+                データ参照範囲：直近100件の投稿（約2ヶ月分）を分析対象としています
+              </p>
+              <p style={{ fontSize: '11px', color: '#CBD5E1', marginTop: '4px' }}>
+                ※Instagram APIの制限により、他人のアカウントの「再生数」は正確に取得できない場合があります。
+              </p>
+            </div>
           </div>
         );
       })}
@@ -307,6 +316,11 @@ export default function InstagramAnalysisPage() {
                   再生数
                 </button>
               </div>
+              {metric === 'views' && (
+                <div style={{ width: '100%', marginTop: '8px', padding: '8px 12px', backgroundColor: '#F1F5F9', borderRadius: '8px', fontSize: '11px', color: '#64748B', textAlign: 'right' }}>
+                  ⚠️ APIの制限により、自分以外のアカウントの再生数は取得できません
+                </div>
+              )}
             </div>
             <div style={{ height: '400px', width: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
@@ -358,6 +372,11 @@ export default function InstagramAnalysisPage() {
                   再生数
                 </button>
               </div>
+              {metric === 'views' && (
+                <div style={{ width: '100%', marginTop: '8px', padding: '8px 12px', backgroundColor: '#F1F5F9', borderRadius: '8px', fontSize: '11px', color: '#64748B', textAlign: 'right' }}>
+                  ⚠️ APIの制限により、自分以外のアカウントの再生数は取得できません
+                </div>
+              )}
             </div>
             <div style={{ height: '400px', width: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
