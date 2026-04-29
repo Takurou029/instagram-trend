@@ -201,20 +201,6 @@ export default function InstagramAnalysisPage() {
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '48px', flexWrap: 'wrap', gap: '24px' }}>
           <div>
             <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0F172A' }}>アカウント比較分析</h1>
-            <div style={{ display: 'flex', backgroundColor: 'white', padding: '4px', borderRadius: '12px', border: '1px solid #E2E8F0', marginTop: '16px', width: 'fit-content' }}>
-              <button 
-                onClick={() => setMetric('likes')}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '8px', border: 'none', backgroundColor: metric === 'likes' ? '#EC4899' : 'transparent', color: metric === 'likes' ? 'white' : '#64748B', cursor: 'pointer', fontSize: '14px', fontWeight: '700', transition: 'all 0.2s' }}
-              >
-                <Heart size={16} fill={metric === 'likes' ? 'white' : 'transparent'} /> いいね数
-              </button>
-              <button 
-                onClick={() => setMetric('views')}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '8px 16px', borderRadius: '8px', border: 'none', backgroundColor: metric === 'views' ? '#8B5CF6' : 'transparent', color: metric === 'views' ? 'white' : '#64748B', cursor: 'pointer', fontSize: '14px', fontWeight: '700', transition: 'all 0.2s' }}
-              >
-                <Play size={16} fill={metric === 'views' ? 'white' : 'transparent'} /> 再生数
-              </button>
-            </div>
           </div>
           <div style={{ position: 'relative', width: '100%', maxWidth: '320px' }}>
             <input
@@ -291,17 +277,35 @@ export default function InstagramAnalysisPage() {
         {/* 日次エンゲージメントチャート */}
         {accounts.length > 0 && (
           <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '24px', border: '1px solid #F1F5F9', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', marginBottom: '32px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
-              <div style={{ width: '40px', height: '40px', backgroundColor: '#FDF2F8', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                {metric === 'likes' ? <Heart size={20} color="#EC4899" /> : <Play size={20} color="#8B5CF6" />}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '40px', height: '40px', backgroundColor: '#FDF2F8', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  {metric === 'likes' ? <Heart size={20} color="#EC4899" /> : <Play size={20} color="#8B5CF6" />}
+                </div>
+                <div>
+                  <h3 style={{ fontWeight: '800', fontSize: '20px', color: '#0F172A', margin: 0 }}>
+                    日次{metric === 'likes' ? 'いいね数' : '再生数'}推移（直近30日）
+                  </h3>
+                  <p style={{ fontSize: '12px', color: '#94A3B8', margin: '2px 0 0' }}>
+                    投稿がない日は 0 と表示されます。1日に複数投稿がある場合は合算しています。
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 style={{ fontWeight: '800', fontSize: '20px', color: '#0F172A', margin: 0 }}>
-                  日次{metric === 'likes' ? 'いいね数' : '再生数'}推移（直近30日）
-                </h3>
-                <p style={{ fontSize: '12px', color: '#94A3B8', margin: '2px 0 0' }}>
-                  投稿がない日は 0 と表示されます。1日に複数投稿がある場合は合算しています。
-                </p>
+
+              {/* 切り替えボタン */}
+              <div style={{ display: 'flex', backgroundColor: '#F8FAFC', padding: '4px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                <button 
+                  onClick={() => setMetric('likes')}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '7px', border: 'none', backgroundColor: metric === 'likes' ? 'white' : 'transparent', color: metric === 'likes' ? '#EC4899' : '#64748B', cursor: 'pointer', fontSize: '12px', fontWeight: '800', boxShadow: metric === 'likes' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' }}
+                >
+                  いいね
+                </button>
+                <button 
+                  onClick={() => setMetric('views')}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '7px', border: 'none', backgroundColor: metric === 'views' ? 'white' : 'transparent', color: metric === 'views' ? '#8B5CF6' : '#64748B', cursor: 'pointer', fontSize: '12px', fontWeight: '800', boxShadow: metric === 'views' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' }}
+                >
+                  再生数
+                </button>
               </div>
             </div>
             <div style={{ height: '400px', width: '100%' }}>
@@ -324,17 +328,35 @@ export default function InstagramAnalysisPage() {
         {/* 月次エンゲージメントチャート */}
         {accounts.length > 0 && (
           <div style={{ backgroundColor: 'white', padding: '40px', borderRadius: '24px', border: '1px solid #F1F5F9', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}>
-              <div style={{ width: '40px', height: '40px', backgroundColor: '#FDF2F8', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                <Trophy size={20} color="#EC4899" />
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '40px', height: '40px', backgroundColor: '#FDF2F8', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <Trophy size={20} color="#EC4899" />
+                </div>
+                <div>
+                  <h3 style={{ fontWeight: '800', fontSize: '20px', color: '#0F172A', margin: 0 }}>
+                    月次{metric === 'likes' ? 'いいね数' : '再生数'}合計（今月 vs 先月）
+                  </h3>
+                  <p style={{ fontSize: '12px', color: '#94A3B8', margin: '2px 0 0' }}>
+                    各月の総{metric === 'likes' ? 'いいね数' : '再生数'}を比較しています。
+                  </p>
+                </div>
               </div>
-              <div>
-                <h3 style={{ fontWeight: '800', fontSize: '20px', color: '#0F172A', margin: 0 }}>
-                  月次{metric === 'likes' ? 'いいね数' : '再生数'}合計（今月 vs 先月）
-                </h3>
-                <p style={{ fontSize: '12px', color: '#94A3B8', margin: '2px 0 0' }}>
-                  各月の総{metric === 'likes' ? 'いいね数' : '再生数'}を比較しています（今月は途中経過を含みます）。
-                </p>
+
+              {/* 切り替えボタン */}
+              <div style={{ display: 'flex', backgroundColor: '#F8FAFC', padding: '4px', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                <button 
+                  onClick={() => setMetric('likes')}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '7px', border: 'none', backgroundColor: metric === 'likes' ? 'white' : 'transparent', color: metric === 'likes' ? '#EC4899' : '#64748B', cursor: 'pointer', fontSize: '12px', fontWeight: '800', boxShadow: metric === 'likes' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' }}
+                >
+                  いいね
+                </button>
+                <button 
+                  onClick={() => setMetric('views')}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '7px', border: 'none', backgroundColor: metric === 'views' ? 'white' : 'transparent', color: metric === 'views' ? '#8B5CF6' : '#64748B', cursor: 'pointer', fontSize: '12px', fontWeight: '800', boxShadow: metric === 'views' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' }}
+                >
+                  再生数
+                </button>
               </div>
             </div>
             <div style={{ height: '400px', width: '100%' }}>

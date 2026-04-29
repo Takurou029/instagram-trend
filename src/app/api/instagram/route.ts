@@ -27,7 +27,8 @@ export async function GET(request: Request) {
     const media: any[] = userData.media?.data || [];
 
     // --- 統計：VIDEO + CAROUSEL を対象 ---
-    const reels = media.filter(m => m.media_type === 'VIDEO' || m.media_type === 'CAROUSEL_ALBUM');
+    // 他人のアカウントの場合、media_type は 'VIDEO' か 'CAROUSEL_ALBUM' (または 'IMAGE')
+    const reels = media.filter(m => m.media_type === 'VIDEO' || m.media_type === 'CAROUSEL_ALBUM' || m.video_view_count !== undefined);
     const stats = {
       postsCount: userData.media_count,
       followers:  userData.followers_count,
