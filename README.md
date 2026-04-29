@@ -1,36 +1,42 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Instagram Trend 分析ツール 仕様書
 
-## Getting Started
+## プロジェクト概要
+Instagramのハッシュタグや特定のアカウントのエンゲージメントを分析し、トレンドの把握や競合分析を効率化するためのWebアプリケーションです。
 
-First, run the development server:
+## 技術スタック
+- **Framework**: Next.js 16.2 (App Router)
+- **Language**: TypeScript
+- **Styling**: Tailwind CSS / Inline Styles
+- **Deployment**: Vercel (GitHub連携による自動デプロイ)
+- **API**: Instagram Graph API (Business Discovery / Hashtag Search)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 主要機能
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### 1. アカウント比較分析
+2つのアカウントを並べてエンゲージメントを比較分析します。
+- **日次エンゲージメント推移**: 過去30日間の「いいね数」または「再生数」の推移を折れ線グラフで表示。投稿がない日は0としてプロットされ、時系列の変化を正確に把握可能。
+- **月次エンゲージメント合計**: 今月と先月の「いいね数」または「再生数」の合計を棒グラフで比較。
+- **指標切り替え**: グラフ右上のスイッチで「いいね数」と「再生数」を瞬時に切り替え可能。
+- **最多いいね Top 3 投稿**: 直近100件の中から最も反響のあった投稿を表示。
+- **データ参照範囲**: 直近100件の投稿（約2ヶ月分）を分析対象。
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 2. トレンド調査（ハッシュタグ分析）
+指定したハッシュタグで「今、伸びている」投稿を抽出・分析します。
+- **抽出内容**: 人気投稿（Top Media）5件 ＋ 新着投稿（Recent Media）15件。
+- **急上昇スコア (Velocity)**: いいね数と経過時間を基に独自アルゴリズムで計算。
+- **サムネイル表示**: リール動画を含め、安定した画像表示を実現（VIDEOタイプはthumbnail_urlを優先）。
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## API制限と注意事項
+- **再生数（Views）について**: Instagram APIの制約により、自分以外のアカウントの再生数は正確に取得できず、0と表示される場合があります（仕様）。
+- **保存数（Saves）について**: 他人のアカウント分析では取得不可能です。
+- **ハッシュタグ検索のレート制限**: 短時間の連続検索や、同一タグへの過度なアクセスにより、一時的に「データが取得できません」というエラーが出る場合があります（数時間で解除されます）。
 
-## Learn More
+## 運用・更新方法
+- **自動デプロイ**: GitHubの `main` ブランチにコードをプッシュすると、Vercelへ自動的に反映されます。
+- **環境変数**: Vercelのダッシュボードで以下の設定が必要です。
+  - `INSTAGRAM_ACCESS_TOKEN`
+  - `INSTAGRAM_APP_SECRET`
+  - `INSTAGRAM_BUSINESS_ACCOUNT_ID`
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+*最終更新日: 2026年4月30日*
