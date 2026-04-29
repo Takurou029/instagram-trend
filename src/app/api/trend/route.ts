@@ -20,12 +20,12 @@ export async function GET(request: Request) {
   }
 
   const hashtagId = tagIdData.data[0].id;
-  const fields    = 'id,media_type,media_url,permalink,like_count,caption,comments_count,timestamp';
+  const fields    = 'id,media_type,media_url,thumbnail_url,permalink,like_count,caption,comments_count,timestamp';
 
   // 2. top_media と recent_media を並列取得
   const [topRes, recentRes] = await Promise.all([
-    fetch(`https://graph.facebook.com/v19.0/${hashtagId}/top_media?user_id=${businessId}&fields=${fields}&limit=10&access_token=${accessToken}`),
-    fetch(`https://graph.facebook.com/v19.0/${hashtagId}/recent_media?user_id=${businessId}&fields=${fields}&limit=20&access_token=${accessToken}`),
+    fetch(`https://graph.facebook.com/v19.0/${hashtagId}/top_media?user_id=${businessId}&fields=${fields}&limit=5&access_token=${accessToken}`),
+    fetch(`https://graph.facebook.com/v19.0/${hashtagId}/recent_media?user_id=${businessId}&fields=${fields}&limit=15&access_token=${accessToken}`),
   ]);
   const [topData, recentData] = await Promise.all([topRes.json(), recentRes.json()]);
 
@@ -56,7 +56,8 @@ export async function GET(request: Request) {
     return {
       id:        m.id,
       title:     m.caption ? m.caption.slice(0, 80) + '…' : 'Instagram Post',
-      thumbnail: m.media_url,
+      // VIDEO は thumbnail_url、それ以外は media_url を使用
+      thumbnail: m.media_type === 'VIDEO' ? (m.thumbnail_url || m.media_url) : m.media_url,
       url:       m.permalink,
       likes,
       comments,
