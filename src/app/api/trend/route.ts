@@ -22,66 +22,32 @@ export async function GET(request: Request) {
   const hashtagId = tagIdData.data[0].id;
   const fields    = 'id,media_type,media_url,permalink,like_count,caption,comments_count,timestamp';
 
-  // 2. top_media と recent_media を並列取得 (最大50件ずつ)
+  // 2. top_media と recent_media を並列取得
   const [topRes, recentRes] = await Promise.all([
-    fetch(`https://graph.facebook.com/v19.0/${hashtagId}/top_media?user_id=${businessId}&fields=${fields}&limit=50&access_token=${accessToken}`),
-    fetch(`https://graph.facebook.com/v19.0/${hashtagId}/recent_media?user_id=${businessId}&fields=${fields}&limit=50&access_token=${accessToken}`),
+    fetch(`https://graph.facebook.com/v19.0/${hashtagId}/top_media?user_id=${businessId}&fields=${fields}&limit=25&access_token=${accessToken}`),
+    fetch(`https://graph.facebook.com/v19.0/${hashtagId}/recent_media?user_id=${businessId}&fields=${fields}&limit=25&access_token=${accessToken}`),
   ]);
   const [topData, recentData] = await Promise.all([topRes.json(), recentRes.json()]);
 
   const topRaw    = (!topData.error    && topData.data)    ? topData.data    : [];
   const recentRaw = (!recentData.error && recentData.data) ? recentData.data : [];
 
-  // 3. マージ（重複 ID を除去）し、直近の投稿に絞り込む
+  // 3. マージ（重複 ID を除去）し、source フラグを付与
   const seen = new Set<string>();
   const merged: any[] = [];
-  const now = Date.now();
-  const DISPLAY_LIMIT_MS = 10 * 24 * 60 * 60 * 1000; // 安全のため10日間に設定
 
-  const filterCriteria = (m: any) => {
-    const postTime = new Date(m.timestamp).getTime();
-    const diff = now - postTime;
-    // 10日以内かつ、いいね数が0より大きい（または統計が取れている）もの
-    return diff <= DISPLAY_LIMIT_MS && (m.like_count !== undefined);
-  };
+  // いいね数が 0 より大きいものだけを対象にする
+  const filterZeroLikes = (m: any) => (m.like_count || 0) > 0;
 
-  for (const m of topRaw.filter(filterCriteria)) {
-    if (!seen.has(m.id)) {
-      seen.add(m.id);
-      merged.push({ ...m, isTop: true });
-    }
-  }
-  for (const m of recentRaw.filter(filterCriteria)) {
-    if (!seen.has(m.id)) {
-      seen.add(m.id);
-      merged.push({ ...m, isTop: false });
-    }
-  }
+  for (const m of topRaw.filter(filterZeroLikes))    { seen.add(m.id); merged.push({ ...m, isTop: true }); }
+  for (const m of recentRaw.filter(filterZeroLikes)) { if (!seen.has(m.id)) merged.push({ ...m, isTop: false }); }
 
   if (merged.length === 0) {
-    // フィルターを緩めて再試行（1ヶ月分）
-    const relaxedLimit = 30 * 24 * 60 * 60 * 1000;
-    const relaxedFilter = (m: any) => (now - new Date(m.timestamp).getTime()) <= relaxedLimit;
-    
-    for (const m of topRaw.filter(relaxedFilter)) {
-      if (!seen.has(m.id)) {
-        seen.add(m.id);
-        merged.push({ ...m, isTop: true });
-      }
-    }
-    for (const m of recentRaw.filter(relaxedFilter)) {
-      if (!seen.has(m.id)) {
-        seen.add(m.id);
-        merged.push({ ...m, isTop: false });
-      }
-    }
-  }
-
-  if (merged.length === 0) {
-    return Response.json({ error: '表示可能な投稿が見つかりませんでした。ハッシュタグに最近の投稿がないか、API制限の可能性があります。' }, { status: 404 });
+    return Response.json({ error: '正確な統計データ（いいね数）が公開されている投稿が見つかりませんでした。' }, { status: 404 });
   }
 
   // 4. 整形 + 急上昇スコア（いいね ÷ 経過時間[h]）を計算
+  const now = Date.now();
   const posts = merged.map((m: any) => {
     const typeLabel = m.media_type === 'VIDEO' ? 'REELS'
                     : m.media_type === 'CAROUSEL_ALBUM' ? 'CAROUSEL'

@@ -68,8 +68,8 @@ export default function TrendResearchPage() {
     if (period !== 'all') {
       const offsets: Record<string, number> = {
         '24h': 24 * 3_600_000,
-        '3d':  3 * 24 * 3_600_000,
         '7d':  7  * 24 * 3_600_000,
+        '30d': 30 * 24 * 3_600_000,
       };
       const cutoff = Date.now() - offsets[period];
       result = result.filter(p => new Date(p.timestamp).getTime() >= cutoff);
@@ -115,10 +115,9 @@ export default function TrendResearchPage() {
                 <div style={{ position: 'absolute', top: '100%', left: '0', marginTop: '8px', width: '280px', backgroundColor: '#1E293B', color: 'white', padding: '16px', borderRadius: '12px', fontSize: '12px', lineHeight: '1.6', zIndex: 100, opacity: 0, visibility: 'hidden', transition: 'all 0.2s', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}>
                   <p style={{ fontWeight: '800', marginBottom: '8px', color: '#EC4899', fontSize: '13px' }}>分析ロジックについて</p>
                   <ul style={{ margin: 0, paddingLeft: '18px' }}>
-                    <li><b>計測範囲:</b> 直近1週間以内の投稿</li>
-                    <li><b>抽出方法:</b> #タグの「人気」と「最新」から最大100件を分析</li>
+                    <li>指定した#タグの「人気投稿」と「最新投稿」から最大50件を取得</li>
                     <li>いいね・コメント・投稿時間から<b>「急上昇スコア（時速）」</b>を算出</li>
-                    <li>1週間より前の投稿は、分析精度維持のため除外されます</li>
+                    <li>正確な統計データが公開されている投稿のみを表示</li>
                   </ul>
                 </div>
               </div>
@@ -185,7 +184,7 @@ export default function TrendResearchPage() {
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span style={{ fontSize: '11px', fontWeight: '800', color: '#94A3B8', textTransform: 'uppercase' }}>期間</span>
                 <div style={{ display: 'flex', backgroundColor: '#F1F5F9', padding: '4px', borderRadius: '10px' }}>
-                  {[{ id: 'all', label: '全期間(1w)' }, { id: '24h', label: '24時間' }, { id: '3d', label: '3日間' }, { id: '7d', label: '7日間' }].map(p => (
+                  {[{ id: 'all', label: '全期間' }, { id: '24h', label: '24時間' }, { id: '7d', label: '7日間' }, { id: '30d', label: '30日間' }].map(p => (
                     <button key={p.id} onClick={() => setPeriod(p.id)} style={{ padding: '6px 12px', borderRadius: '8px', border: 'none', fontSize: '12px', fontWeight: '700', cursor: 'pointer', backgroundColor: period === p.id ? 'white' : 'transparent', color: period === p.id ? '#0F172A' : '#64748B', boxShadow: period === p.id ? '0 2px 4px rgba(0,0,0,0.05)' : 'none' }}>
                       {p.label}
                     </button>
