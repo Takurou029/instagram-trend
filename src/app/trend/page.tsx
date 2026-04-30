@@ -196,7 +196,19 @@ export default function TrendResearchPage() {
               >
                 {/* サムネイル */}
                 <div style={{ position: 'relative', width: '100%', aspectRatio: '9/16', backgroundColor: '#000' }}>
-                  <img src={post.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  {post.type === 'REELS' ? (
+                    <video 
+                      src={post.thumbnail} 
+                      muted 
+                      playsInline 
+                      loop 
+                      onMouseEnter={e => e.currentTarget.play()} 
+                      onMouseLeave={e => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                    />
+                  ) : (
+                    <img src={post.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  )}
                   {/* バッジ類 */}
                   <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {post.isTop && (

@@ -20,27 +20,31 @@ export async function GET(request: Request) {
   }
 
   const hashtagId = tagIdData.data[0].id;
-  const fields    = 'id,media_type,media_url,permalink,like_count,caption,timestamp';
+  const fields    = 'id,media_type,media_url,permalink,like_count,caption,comments_count,timestamp';
 
   // 2. top_media と recent_media を並列取得
   const [topRes, recentRes] = await Promise.all([
-    fetch(`https://graph.facebook.com/v19.0/${hashtagId}/top_media?user_id=${businessId}&fields=${fields}&limit=5&access_token=${accessToken}`),
-    fetch(`https://graph.facebook.com/v19.0/${hashtagId}/recent_media?user_id=${businessId}&fields=${fields}&limit=15&access_token=${accessToken}`),
+    fetch(`https://graph.facebook.com/v19.0/${hashtagId}/top_media?user_id=${businessId}&fields=${fields}&limit=25&access_token=${accessToken}`),
+    fetch(`https://graph.facebook.com/v19.0/${hashtagId}/recent_media?user_id=${businessId}&fields=${fields}&limit=25&access_token=${accessToken}`),
   ]);
   const [topData, recentData] = await Promise.all([topRes.json(), recentRes.json()]);
 
   const topRaw    = (!topData.error    && topData.data)    ? topData.data    : [];
   const recentRaw = (!recentData.error && recentData.data) ? recentData.data : [];
 
-  if (topRaw.length === 0 && recentRaw.length === 0) {
-    return Response.json({ error: 'インスタAPIからデータを取得できませんでした。' }, { status: 500 });
-  }
-
   // 3. マージ（重複 ID を除去）し、source フラグを付与
   const seen = new Set<string>();
   const merged: any[] = [];
-  for (const m of topRaw)    { seen.add(m.id); merged.push({ ...m, isTop: true }); }
-  for (const m of recentRaw) { if (!seen.has(m.id)) merged.push({ ...m, isTop: false }); }
+
+  // いいね数が 0 より大きいものだけを対象にする
+  const filterZeroLikes = (m: any) => (m.like_count || 0) > 0;
+
+  for (const m of topRaw.filter(filterZeroLikes))    { seen.add(m.id); merged.push({ ...m, isTop: true }); }
+  for (const m of recentRaw.filter(filterZeroLikes)) { if (!seen.has(m.id)) merged.push({ ...m, isTop: false }); }
+
+  if (merged.length === 0) {
+    return Response.json({ error: '正確な統計データ（いいね数）が公開されている投稿が見つかりませんでした。' }, { status: 404 });
+  }
 
   // 4. 整形 + 急上昇スコア（いいね ÷ 経過時間[h]）を計算
   const now = Date.now();
@@ -50,7 +54,8 @@ export async function GET(request: Request) {
                     : 'POST';
     const hoursAgo  = Math.max((now - new Date(m.timestamp).getTime()) / 3_600_000, 0.5);
     const likes     = m.like_count     || 0;
-    const velocity  = Math.round(likes / hoursAgo); 
+    const comments  = m.comments_count || 0;
+    const velocity  = Math.round((likes + comments * 2) / hoursAgo); // コメントを2倍重み付け
 
     return {
       id:        m.id,
@@ -58,13 +63,14 @@ export async function GET(request: Request) {
       thumbnail: m.media_url,
       url:       m.permalink,
       likes,
-      comments:  0, // ハッシュタグAPIでは取得不可のため0固定
+      comments,
       type:      typeLabel,
       timestamp: m.timestamp,
       isTop:     m.isTop,
       velocity,
     };
   });
+
 
   // 5. デフォルトは急上昇順（velocity 降順）で返す
   posts.sort((a, b) => b.velocity - a.velocity);
