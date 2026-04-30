@@ -46,15 +46,14 @@ export async function GET(request: Request) {
       const fullDateStr = d.toISOString().split('T')[0]; // YYYY-MM-DD
       
       // その日の投稿を合算
-      const dayData = reels
-        .filter(m => m.timestamp.startsWith(fullDateStr))
-        .reduce((acc, m) => {
+      const postsForDay = reels.filter(m => m.timestamp.startsWith(fullDateStr));
+      const dayData = postsForDay.reduce((acc, m) => {
           acc.likes += (m.like_count || 0);
           acc.views += (m.video_view_count || 0);
           return acc;
         }, { likes: 0, views: 0 });
       
-      dailyChart.push({ date: dateStr, ...dayData });
+      dailyChart.push({ date: dateStr, ...dayData, posts: postsForDay.length });
     }
 
     // --- 新しい集計ロジック：月次（今月と先月） ---
@@ -65,9 +64,8 @@ export async function GET(request: Request) {
     const lastMonth = lastMonthDate.toISOString().slice(0, 7); // YYYY-MM
 
     [lastMonth, currentMonth].forEach(month => {
-      const monthData = reels
-        .filter(m => m.timestamp.startsWith(month))
-        .reduce((acc, m) => {
+      const postsForMonth = reels.filter(m => m.timestamp.startsWith(month));
+      const monthData = postsForMonth.reduce((acc, m) => {
           acc.likes += (m.like_count || 0);
           acc.views += (m.video_view_count || 0);
           return acc;
@@ -75,7 +73,8 @@ export async function GET(request: Request) {
       
       monthlyChart.push({ 
         date: month.replace('-', '/'), 
-        ...monthData 
+        ...monthData,
+        posts: postsForMonth.length
       });
     });
 

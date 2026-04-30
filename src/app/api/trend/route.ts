@@ -20,7 +20,7 @@ export async function GET(request: Request) {
   }
 
   const hashtagId = tagIdData.data[0].id;
-  const fields    = 'id,media_type,media_url,thumbnail_url,permalink,like_count,caption,comments_count,timestamp';
+  const fields    = 'id,media_type,media_url,permalink,like_count,caption,timestamp';
 
   // 2. top_media と recent_media を並列取得
   const [topRes, recentRes] = await Promise.all([
@@ -50,17 +50,15 @@ export async function GET(request: Request) {
                     : 'POST';
     const hoursAgo  = Math.max((now - new Date(m.timestamp).getTime()) / 3_600_000, 0.5);
     const likes     = m.like_count     || 0;
-    const comments  = m.comments_count || 0;
-    const velocity  = Math.round((likes + comments * 3) / hoursAgo); // コメントを3倍重み付け
+    const velocity  = Math.round(likes / hoursAgo); 
 
     return {
       id:        m.id,
       title:     m.caption ? m.caption.slice(0, 80) + '…' : 'Instagram Post',
-      // VIDEO は thumbnail_url、それ以外は media_url を使用
-      thumbnail: m.media_type === 'VIDEO' ? (m.thumbnail_url || m.media_url) : m.media_url,
+      thumbnail: m.media_url,
       url:       m.permalink,
       likes,
-      comments,
+      comments:  0, // ハッシュタグAPIでは取得不可のため0固定
       type:      typeLabel,
       timestamp: m.timestamp,
       isTop:     m.isTop,

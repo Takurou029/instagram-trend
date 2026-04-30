@@ -112,7 +112,7 @@ function TopPostsSection({ accounts }: { accounts: any[] }) {
                             <Heart size={14} fill="#EC4899" /> {post.likes.toLocaleString()}
                           </span>
                           <span style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '14px', fontWeight: '700', color: '#64748B' }}>
-                            <Play size={14} /> {post.views?.toLocaleString() || 0}
+                            <MessageCircle size={14} /> {post.comments.toLocaleString()}
                           </span>
                         </div>
                         <span style={{ fontSize: '11px', color: '#94A3B8', fontWeight: '500' }}>{formatDate(post.timestamp)}</span>
@@ -134,9 +134,6 @@ function TopPostsSection({ accounts }: { accounts: any[] }) {
               <p style={{ fontSize: '12px', color: '#94A3B8', margin: 0 }}>
                 データ参照範囲：直近100件の投稿（約2ヶ月分）を分析対象としています
               </p>
-              <p style={{ fontSize: '11px', color: '#CBD5E1', marginTop: '4px' }}>
-                ※Instagram APIの制限により、他人のアカウントの「再生数」は正確に取得できない場合があります。
-              </p>
             </div>
           </div>
         );
@@ -150,7 +147,7 @@ export default function InstagramAnalysisPage() {
   const [accounts, setAccounts]           = useState<any[]>([]);
   const [isLoading, setIsLoading]         = useState(false);
   const [apiError, setApiError]           = useState<string | null>(null);
-  const [metric, setMetric]               = useState<'likes' | 'views'>('likes');
+  const [metric, setMetric]               = useState<'likes' | 'posts'>('likes');
 
   const fetchInstaData = async (username: string) => {
     if (!username) return;
@@ -181,7 +178,7 @@ export default function InstagramAnalysisPage() {
       const entry: any = { date: d.date };
       accounts.forEach(acc => { 
         if (acc.dailyChart[i]) {
-          entry[acc.username] = metric === 'likes' ? acc.dailyChart[i].likes : acc.dailyChart[i].views;
+          entry[acc.username] = metric === 'likes' ? acc.dailyChart[i].likes : acc.dailyChart[i].posts;
         }
       });
       return entry;
@@ -194,7 +191,7 @@ export default function InstagramAnalysisPage() {
       const entry: any = { date: d.date };
       accounts.forEach(acc => { 
         if (acc.monthlyChart[i]) {
-          entry[acc.username] = metric === 'likes' ? acc.monthlyChart[i].likes : acc.monthlyChart[i].views;
+          entry[acc.username] = metric === 'likes' ? acc.monthlyChart[i].likes : acc.monthlyChart[i].posts;
         }
       });
       return entry;
@@ -289,11 +286,11 @@ export default function InstagramAnalysisPage() {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px', flexWrap: 'wrap', gap: '16px' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <div style={{ width: '40px', height: '40px', backgroundColor: '#FDF2F8', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {metric === 'likes' ? <Heart size={20} color="#EC4899" /> : <Play size={20} color="#8B5CF6" />}
+                  {metric === 'likes' ? <Heart size={20} color="#EC4899" /> : <Camera size={20} color="#8B5CF6" />}
                 </div>
                 <div>
                   <h3 style={{ fontWeight: '800', fontSize: '20px', color: '#0F172A', margin: 0 }}>
-                    日次{metric === 'likes' ? 'いいね数' : '再生数'}推移（直近30日）
+                    日次{metric === 'likes' ? 'いいね数' : '投稿本数'}推移（直近30日）
                   </h3>
                   <p style={{ fontSize: '12px', color: '#94A3B8', margin: '2px 0 0' }}>
                     投稿がない日は 0 と表示されます。1日に複数投稿がある場合は合算しています。
@@ -310,17 +307,12 @@ export default function InstagramAnalysisPage() {
                   いいね
                 </button>
                 <button 
-                  onClick={() => setMetric('views')}
-                  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '7px', border: 'none', backgroundColor: metric === 'views' ? 'white' : 'transparent', color: metric === 'views' ? '#8B5CF6' : '#64748B', cursor: 'pointer', fontSize: '12px', fontWeight: '800', boxShadow: metric === 'views' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' }}
+                  onClick={() => setMetric('posts')}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '7px', border: 'none', backgroundColor: metric === 'posts' ? 'white' : 'transparent', color: metric === 'posts' ? '#8B5CF6' : '#64748B', cursor: 'pointer', fontSize: '12px', fontWeight: '800', boxShadow: metric === 'posts' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' }}
                 >
-                  再生数
+                  投稿本数
                 </button>
               </div>
-              {metric === 'views' && (
-                <div style={{ width: '100%', marginTop: '8px', padding: '8px 12px', backgroundColor: '#F1F5F9', borderRadius: '8px', fontSize: '11px', color: '#64748B', textAlign: 'right' }}>
-                  ⚠️ APIの制限により、自分以外のアカウントの再生数は取得できません
-                </div>
-              )}
             </div>
             <div style={{ height: '400px', width: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
@@ -349,10 +341,10 @@ export default function InstagramAnalysisPage() {
                 </div>
                 <div>
                   <h3 style={{ fontWeight: '800', fontSize: '20px', color: '#0F172A', margin: 0 }}>
-                    月次{metric === 'likes' ? 'いいね数' : '再生数'}合計（今月 vs 先月）
+                    月次{metric === 'likes' ? 'いいね数' : '投稿本数'}合計（今月 vs 先月）
                   </h3>
                   <p style={{ fontSize: '12px', color: '#94A3B8', margin: '2px 0 0' }}>
-                    各月の総{metric === 'likes' ? 'いいね数' : '再生数'}を比較しています。
+                    各月の総{metric === 'likes' ? 'いいね数' : '投稿本数'}を比較しています。
                   </p>
                 </div>
               </div>
@@ -366,17 +358,12 @@ export default function InstagramAnalysisPage() {
                   いいね
                 </button>
                 <button 
-                  onClick={() => setMetric('views')}
-                  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '7px', border: 'none', backgroundColor: metric === 'views' ? 'white' : 'transparent', color: metric === 'views' ? '#8B5CF6' : '#64748B', cursor: 'pointer', fontSize: '12px', fontWeight: '800', boxShadow: metric === 'views' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' }}
+                  onClick={() => setMetric('posts')}
+                  style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', borderRadius: '7px', border: 'none', backgroundColor: metric === 'posts' ? 'white' : 'transparent', color: metric === 'posts' ? '#8B5CF6' : '#64748B', cursor: 'pointer', fontSize: '12px', fontWeight: '800', boxShadow: metric === 'posts' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none', transition: 'all 0.2s' }}
                 >
-                  再生数
+                  投稿本数
                 </button>
               </div>
-              {metric === 'views' && (
-                <div style={{ width: '100%', marginTop: '8px', padding: '8px 12px', backgroundColor: '#F1F5F9', borderRadius: '8px', fontSize: '11px', color: '#64748B', textAlign: 'right' }}>
-                  ⚠️ APIの制限により、自分以外のアカウントの再生数は取得できません
-                </div>
-              )}
             </div>
             <div style={{ height: '400px', width: '100%' }}>
               <ResponsiveContainer width="100%" height="100%">
