@@ -148,14 +148,42 @@ export default function InstagramAnalysisPage() {
   const [isLoading, setIsLoading]         = useState(false);
   const [apiError, setApiError]           = useState<string | null>(null);
   const [metric, setMetric]               = useState<'likes' | 'posts'>('likes');
+  const [history, setHistory]             = useState<string[]>([]);
 
-  const fetchInstaData = async (username: string) => {
-    if (!username) return;
-    const clean = username.replace('@', '').trim();
+  // 履歴の読み込み
+  React.useEffect(() => {
+    const saved = localStorage.getItem('insta_analysis_history');
+    if (saved) setHistory(JSON.parse(saved));
+  }, []);
+
+  const saveToHistory = (username: string) => {
+    const newHistory = [username, ...history.filter(h => h !== username)].slice(0, 10);
+    setHistory(newHistory);
+    localStorage.setItem('insta_analysis_history', JSON.stringify(newHistory));
+  };
+
+  const removeFromHistory = (username: string) => {
+    const newHistory = history.filter(h => h !== username);
+    setHistory(newHistory);
+    localStorage.setItem('insta_analysis_history', JSON.stringify(newHistory));
+  };
+
+  const extractUsername = (input: string) => {
+    const clean = input.trim();
+    // URLパターンのチェック (instagram.com/username/...)
+    const urlMatch = clean.match(/(?:instagram\.com\/|instagr\.am\/)([a-zA-Z0-9_.]+)/);
+    if (urlMatch) return urlMatch[1];
+    // @username パターン
+    return clean.replace('@', '');
+  };
+
+  const fetchInstaData = async (input: string) => {
+    if (!input) return;
+    const username = extractUsername(input);
     setIsLoading(true);
     setApiError(null);
     try {
-      const res  = await fetch(`/api/instagram?username=${encodeURIComponent(clean)}`);
+      const res  = await fetch(`/api/instagram?username=${encodeURIComponent(username)}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setAccounts(prev => {
@@ -163,6 +191,7 @@ export default function InstagramAnalysisPage() {
         return [...prev, { ...data, color: COLORS[prev.length % COLORS.length] }].slice(0, 2);
       });
       setUsernameInput('');
+      saveToHistory(data.username);
     } catch (err: any) {
       setApiError(err.message);
     } finally {
@@ -208,10 +237,10 @@ export default function InstagramAnalysisPage() {
           <div>
             <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0F172A' }}>アカウント比較分析</h1>
           </div>
-          <div style={{ position: 'relative', width: '100%', maxWidth: '320px' }}>
+          <div style={{ position: 'relative', width: '100%', maxWidth: '400px' }}>
             <input
               type="text"
-              placeholder="ユーザー名を入力 (例: tcb_official)"
+              placeholder="ユーザー名 または URL を入力"
               style={{ width: '100%', padding: '14px 48px 14px 16px', backgroundColor: 'white', border: '1px solid #E2E8F0', borderRadius: '12px', fontSize: '14px', outline: 'none', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}
               value={usernameInput}
               onChange={e => setUsernameInput(e.target.value)}
@@ -226,6 +255,30 @@ export default function InstagramAnalysisPage() {
             </button>
           </div>
         </header>
+
+        {/* 履歴リスト */}
+        {history.length > 0 && (
+          <div style={{ marginBottom: '32px', display: 'flex', alignItems: 'center', gap: '12px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '12px', fontWeight: '800', color: '#94A3B8', textTransform: 'uppercase' }}>履歴:</span>
+            {history.map(user => (
+              <div key={user} style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: 'white', padding: '6px 12px', borderRadius: '20px', border: '1px solid #E2E8F0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                <button 
+                  onClick={() => fetchInstaData(user)}
+                  disabled={isLoading || accounts.length >= 2}
+                  style={{ background: 'none', border: 'none', fontSize: '13px', fontWeight: '700', color: '#475569', cursor: 'pointer', padding: 0 }}
+                >
+                  @{user}
+                </button>
+                <button 
+                  onClick={() => removeFromHistory(user)}
+                  style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: '2px', display: 'flex' }}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {apiError && (
           <div style={{ backgroundColor: '#FEF2F2', borderLeft: '4px solid #EF4444', padding: '16px', borderRadius: '0 12px 12px 0', marginBottom: '32px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
