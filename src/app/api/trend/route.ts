@@ -32,24 +32,53 @@ export async function GET(request: Request) {
   const topRaw    = (!topData.error    && topData.data)    ? topData.data    : [];
   const recentRaw = (!recentData.error && recentData.data) ? recentData.data : [];
 
-  // 3. マージ（重複 ID を除去）し、1週間以内の投稿に絞り込む
+  // 3. マージ（重複 ID を除去）し、直近の投稿に絞り込む
   const seen = new Set<string>();
   const merged: any[] = [];
   const now = Date.now();
-  const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+  const DISPLAY_LIMIT_MS = 10 * 24 * 60 * 60 * 1000; // 安全のため10日間に設定
 
-  // いいね数が 0 より大きい & 1週間以内
   const filterCriteria = (m: any) => {
-    const isRecentEnough = (now - new Date(m.timestamp).getTime()) <= ONE_WEEK_MS;
-    const hasLikes = (m.like_count || 0) > 0;
-    return isRecentEnough && hasLikes;
+    const postTime = new Date(m.timestamp).getTime();
+    const diff = now - postTime;
+    // 10日以内かつ、いいね数が0より大きい（または統計が取れている）もの
+    return diff <= DISPLAY_LIMIT_MS && (m.like_count !== undefined);
   };
 
-  for (const m of topRaw.filter(filterCriteria))    { seen.add(m.id); merged.push({ ...m, isTop: true }); }
-  for (const m of recentRaw.filter(filterCriteria)) { if (!seen.has(m.id)) merged.push({ ...m, isTop: false }); }
+  for (const m of topRaw.filter(filterCriteria)) {
+    if (!seen.has(m.id)) {
+      seen.add(m.id);
+      merged.push({ ...m, isTop: true });
+    }
+  }
+  for (const m of recentRaw.filter(filterCriteria)) {
+    if (!seen.has(m.id)) {
+      seen.add(m.id);
+      merged.push({ ...m, isTop: false });
+    }
+  }
 
   if (merged.length === 0) {
-    return Response.json({ error: '直近1週間以内に、正確な統計データが公開されている人気投稿が見つかりませんでした。' }, { status: 404 });
+    // フィルターを緩めて再試行（1ヶ月分）
+    const relaxedLimit = 30 * 24 * 60 * 60 * 1000;
+    const relaxedFilter = (m: any) => (now - new Date(m.timestamp).getTime()) <= relaxedLimit;
+    
+    for (const m of topRaw.filter(relaxedFilter)) {
+      if (!seen.has(m.id)) {
+        seen.add(m.id);
+        merged.push({ ...m, isTop: true });
+      }
+    }
+    for (const m of recentRaw.filter(relaxedFilter)) {
+      if (!seen.has(m.id)) {
+        seen.add(m.id);
+        merged.push({ ...m, isTop: false });
+      }
+    }
+  }
+
+  if (merged.length === 0) {
+    return Response.json({ error: '表示可能な投稿が見つかりませんでした。ハッシュタグに最近の投稿がないか、API制限の可能性があります。' }, { status: 404 });
   }
 
   // 4. 整形 + 急上昇スコア（いいね ÷ 経過時間[h]）を計算
