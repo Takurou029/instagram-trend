@@ -87,7 +87,23 @@ export default function HomePage() {
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginBottom: '40px', gap: '20px', flexWrap: 'wrap' }}>
           <div>
             <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0F172A', marginBottom: '8px' }}>マイ・ウォッチリスト</h1>
-            <p style={{ color: '#64748B', fontSize: '16px' }}>ベンチマークアカウントの「今」を定点観測します</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <p style={{ color: '#64748B', fontSize: '16px', margin: 0 }}>ベンチマークアカウントの「今」を定点観測します</p>
+              <div style={{ position: 'relative', display: 'inline-block' }}>
+                <div style={{ cursor: 'help', width: '18px', height: '18px', borderRadius: '50%', backgroundColor: '#E2E8F0', color: '#64748B', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  onMouseEnter={e => { (e.currentTarget.nextSibling as HTMLElement).style.opacity = '1'; (e.currentTarget.nextSibling as HTMLElement).style.visibility = 'visible'; }}
+                  onMouseLeave={e => { (e.currentTarget.nextSibling as HTMLElement).style.opacity = '0'; (e.currentTarget.nextSibling as HTMLElement).style.visibility = 'hidden'; }}
+                >?</div>
+                <div style={{ position: 'absolute', top: '100%', left: '0', marginTop: '8px', width: '280px', backgroundColor: '#1E293B', color: 'white', padding: '16px', borderRadius: '12px', fontSize: '12px', lineHeight: '1.6', zIndex: 100, opacity: 0, visibility: 'hidden', transition: 'all 0.2s', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}>
+                  <p style={{ fontWeight: '800', marginBottom: '8px', color: '#EC4899', fontSize: '13px' }}>表示データについて</p>
+                  <ul style={{ margin: 0, paddingLeft: '18px' }}>
+                    <li><b>最新投稿 反応率:</b> 最も反応の良かった投稿の「いいね ÷ フォロワー数」を表示</li>
+                    <li><b>平均いいね:</b> 直近のリール・カルーセル投稿の平均値を算出</li>
+                    <li><b>データ更新:</b> 「一括更新」ボタンで最新の状態を取得します</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
           </div>
           <button 
             onClick={refreshAll} 
