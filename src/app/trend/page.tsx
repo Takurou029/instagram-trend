@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Search, Heart, MessageCircle, ExternalLink, TrendingUp, Camera, Download, Flame } from 'lucide-react';
+import { Search, Heart, MessageCircle, ExternalLink, TrendingUp, Camera, Download, Flame, X } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 
 function formatAge(timestamp: string) {
@@ -18,17 +18,43 @@ export default function TrendResearchPage() {
   const [error, setError]       = useState<string | null>(null);
   const [period, setPeriod]     = useState('all');
   const [sortBy, setSortBy]     = useState('velocity');
+  const [history, setHistory]   = useState<string[]>([]);
 
-  const fetchTrendData = async () => {
-    if (!keyword) return;
+  // 履歴の読み込み
+  React.useEffect(() => {
+    const saved = localStorage.getItem('insta_trend_history');
+    if (saved) setHistory(JSON.parse(saved));
+  }, []);
+
+  const saveToHistory = (kw: string) => {
+    const cleanKw = kw.replace('#', '').trim();
+    if (!cleanKw) return;
+    const newHistory = [cleanKw, ...history.filter(h => h !== cleanKw)].slice(0, 10);
+    setHistory(newHistory);
+    localStorage.setItem('insta_trend_history', JSON.stringify(newHistory));
+  };
+
+  const removeFromHistory = (kw: string) => {
+    const newHistory = history.filter(h => h !== kw);
+    setHistory(newHistory);
+    localStorage.setItem('insta_trend_history', JSON.stringify(newHistory));
+  };
+
+  const fetchTrendData = async (kw?: string) => {
+    const targetKeyword = kw || keyword;
+    if (!targetKeyword) return;
+    
     setIsLoading(true);
     setError(null);
     setAllPosts([]);
     try {
-      const res  = await fetch(`/api/trend?tag=${encodeURIComponent(keyword.replace('#', ''))}`);
+      const cleanKw = targetKeyword.replace('#', '').trim();
+      const res  = await fetch(`/api/trend?tag=${encodeURIComponent(cleanKw)}`);
       const data = await res.json();
       if (data.error) throw new Error(data.error);
       setAllPosts(data.posts);
+      setKeyword(cleanKw);
+      saveToHistory(cleanKw);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -79,7 +105,23 @@ export default function TrendResearchPage() {
         <header style={{ marginBottom: '40px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '20px' }}>
           <div>
             <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0F172A', marginBottom: '8px' }}>トレンドリサーチ</h1>
-            <p style={{ color: '#64748B', fontSize: '16px' }}>ハッシュタグから「今、伸びている」投稿を抽出・分析します</p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <p style={{ color: '#64748B', fontSize: '16px', margin: 0 }}>ハッシュタグから「今、伸びている」投稿を抽出・分析します</p>
+              <div style={{ position: 'relative', display: 'inline-block' }}>
+                <div style={{ cursor: 'help', width: '18px', height: '18px', borderRadius: '50%', backgroundColor: '#E2E8F0', color: '#64748B', fontSize: '12px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  onMouseEnter={e => { (e.currentTarget.nextSibling as HTMLElement).style.opacity = '1'; (e.currentTarget.nextSibling as HTMLElement).style.visibility = 'visible'; }}
+                  onMouseLeave={e => { (e.currentTarget.nextSibling as HTMLElement).style.opacity = '0'; (e.currentTarget.nextSibling as HTMLElement).style.visibility = 'hidden'; }}
+                >?</div>
+                <div style={{ position: 'absolute', top: '100%', left: '0', marginTop: '8px', width: '280px', backgroundColor: '#1E293B', color: 'white', padding: '16px', borderRadius: '12px', fontSize: '12px', lineHeight: '1.6', zIndex: 100, opacity: 0, visibility: 'hidden', transition: 'all 0.2s', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}>
+                  <p style={{ fontWeight: '800', marginBottom: '8px', color: '#EC4899', fontSize: '13px' }}>分析ロジックについて</p>
+                  <ul style={{ margin: 0, paddingLeft: '18px' }}>
+                    <li>指定した#タグの「人気投稿」と「最新投稿」から最大50件を取得</li>
+                    <li>いいね・コメント・投稿時間から<b>「急上昇スコア（時速）」</b>を算出</li>
+                    <li>正確な統計データが公開されている投稿のみを表示</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
           </div>
           {allPosts.length > 0 && (
             <button onClick={downloadCSV} style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'white', color: '#0F172A', padding: '12px 20px', borderRadius: '12px', border: '1px solid #E2E8F0', fontWeight: '700', cursor: 'pointer', fontSize: '14px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
@@ -87,6 +129,30 @@ export default function TrendResearchPage() {
             </button>
           )}
         </header>
+
+        {/* 履歴リスト */}
+        {history.length > 0 && (
+          <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: '11px', fontWeight: '800', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.05em' }}>最近の検索:</span>
+            {history.map(kw => (
+              <div key={kw} style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: 'white', padding: '6px 12px', borderRadius: '20px', border: '1px solid #E2E8F0', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                <button 
+                  onClick={() => fetchTrendData(kw)}
+                  disabled={isLoading}
+                  style={{ background: 'none', border: 'none', fontSize: '13px', fontWeight: '700', color: '#475569', cursor: 'pointer', padding: 0 }}
+                >
+                  #{kw}
+                </button>
+                <button 
+                  onClick={() => removeFromHistory(kw)}
+                  style={{ background: 'none', border: 'none', color: '#94A3B8', cursor: 'pointer', padding: '2px', display: 'flex' }}
+                >
+                  <X size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* 検索バー */}
         <div style={{ backgroundColor: 'white', padding: '32px', borderRadius: '24px', border: '1px solid #F1F5F9', marginBottom: '32px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' }}>
@@ -103,7 +169,7 @@ export default function TrendResearchPage() {
               <Search size={20} color="#94A3B8" style={{ position: 'absolute', left: '16px', top: '50%', transform: 'translateY(-50%)' }} />
             </div>
             <button
-              onClick={fetchTrendData}
+              onClick={() => fetchTrendData()}
               disabled={isLoading || !keyword}
               style={{ background: isLoading ? '#CBD5E1' : 'linear-gradient(to right, #EC4899, #8B5CF6)', color: 'white', padding: '16px 32px', borderRadius: '12px', fontWeight: '800', border: 'none', cursor: isLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', transition: 'background 0.3s' }}
             >

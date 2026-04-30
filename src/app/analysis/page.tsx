@@ -232,10 +232,26 @@ export default function InstagramAnalysisPage() {
       <Sidebar />
       <main className="main-content" style={{ backgroundColor: '#F8FAFC' }}>
 
-        {/* ヘッダー */}
         <header style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '48px', flexWrap: 'wrap', gap: '24px' }}>
           <div>
-            <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0F172A' }}>アカウント比較分析</h1>
+            <h1 style={{ fontSize: '32px', fontWeight: '800', color: '#0F172A', marginBottom: '4px' }}>アカウント比較分析</h1>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <p style={{ color: '#64748B', fontSize: '14px', margin: 0 }}>競合アカウントの投稿データ・推移を可視化します</p>
+              <div style={{ position: 'relative', display: 'inline-block' }}>
+                <div style={{ cursor: 'help', width: '16px', height: '16px', borderRadius: '50%', backgroundColor: '#E2E8F0', color: '#64748B', fontSize: '10px', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  onMouseEnter={e => { (e.currentTarget.nextSibling as HTMLElement).style.opacity = '1'; (e.currentTarget.nextSibling as HTMLElement).style.visibility = 'visible'; }}
+                  onMouseLeave={e => { (e.currentTarget.nextSibling as HTMLElement).style.opacity = '0'; (e.currentTarget.nextSibling as HTMLElement).style.visibility = 'hidden'; }}
+                >?</div>
+                <div style={{ position: 'absolute', top: '100%', left: '0', marginTop: '8px', width: '280px', backgroundColor: '#1E293B', color: 'white', padding: '16px', borderRadius: '12px', fontSize: '12px', lineHeight: '1.6', zIndex: 100, opacity: 0, visibility: 'hidden', transition: 'all 0.2s', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}>
+                  <p style={{ fontWeight: '800', marginBottom: '8px', color: '#EC4899', fontSize: '13px' }}>分析ロジックについて</p>
+                  <ul style={{ margin: 0, paddingLeft: '18px' }}>
+                    <li><b>分析対象:</b> 直近100件の投稿（約2ヶ月分）</li>
+                    <li><b>平均値:</b> 反響の大きいリール・カルーセル投稿を中心に算出</li>
+                    <li><b>日次推移:</b> 直近30日間の合算データを集計</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
           </div>
           <div style={{ position: 'relative', width: '100%', maxWidth: '400px' }}>
             <input
