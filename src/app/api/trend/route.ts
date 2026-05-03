@@ -36,14 +36,12 @@ export async function GET(request: Request) {
   const seen = new Set<string>();
   const merged: any[] = [];
 
-  // いいね数が 0 より大きいものだけを対象にする
-  const filterZeroLikes = (m: any) => (m.like_count || 0) > 0;
-
-  for (const m of topRaw.filter(filterZeroLikes))    { seen.add(m.id); merged.push({ ...m, isTop: true }); }
-  for (const m of recentRaw.filter(filterZeroLikes)) { if (!seen.has(m.id)) merged.push({ ...m, isTop: false }); }
+  // like_count は非公開設定の投稿では API から返ってこないため、フィルタしない
+  for (const m of topRaw)    { seen.add(m.id); merged.push({ ...m, isTop: true }); }
+  for (const m of recentRaw) { if (!seen.has(m.id)) merged.push({ ...m, isTop: false }); }
 
   if (merged.length === 0) {
-    return Response.json({ error: '正確な統計データ（いいね数）が公開されている投稿が見つかりませんでした。' }, { status: 404 });
+    return Response.json({ error: `ハッシュタグ「#${cleanTag}」の投稿が見つかりませんでした。別のキーワードを試してみてください。` }, { status: 404 });
   }
 
   // 4. 整形 + 急上昇スコア（いいね ÷ 経過時間[h]）を計算
