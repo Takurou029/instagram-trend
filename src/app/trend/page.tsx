@@ -1,14 +1,71 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { Search, Heart, MessageCircle, ExternalLink, TrendingUp, Camera, Download, Flame, X } from 'lucide-react';
+import { Search, Heart, MessageCircle, ExternalLink, TrendingUp, Camera, Download, Flame, X, Sparkles, RefreshCcw, Zap } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 
 function formatAge(timestamp: string) {
   const h = (Date.now() - new Date(timestamp).getTime()) / 3_600_000;
-  if (h < 1)  return `${Math.round(h * 60)}分前`;
+  if (h < 1)  return `${Math.round(Math.max(h * 60, 1))}分前`;
   if (h < 24) return `${Math.round(h)}時間前`;
   return `${Math.round(h / 24)}日前`;
+}
+
+function HighlightedText({ text }: { text: string }) {
+  if (!text) return null;
+  const parts = text.split(/(\【.*?\】)/g);
+  return (
+    <>
+      {parts.map((part, i) => 
+        part.startsWith('【') && part.endsWith('】') ? (
+          <span key={i} className="block text-[12px] font-black text-slate-400 uppercase tracking-widest mb-1 mt-4 first:mt-0">
+            {part.slice(1, -1)}
+          </span>
+        ) : (
+          <span key={i} className="text-[15px] font-semibold text-slate-900 leading-relaxed">
+            {part}
+          </span>
+        )
+      )}
+    </>
+  );
+}
+
+interface MarketInsight {
+  marketAnalysis: {
+    trends: string;
+    audienceDemand: string;
+    referencedIds?: string[];
+  };
+  seoKeywords: string[];
+  strategicSeeds: {
+    type: 'FEED' | 'REELS';
+    angle: string;
+    reason: string;
+    hook: string;
+    coreMessage: string;
+    referencedIds: string[];
+  }[];
+}
+
+// コンポーネント外に配置
+function ReferencedPosts({ ids, allPosts }: { ids?: string[], allPosts: any[] }) {
+  if (!ids || ids.length === 0) return null;
+  const refs = allPosts.filter(p => ids.includes(p.id));
+  if (refs.length === 0) return null;
+
+  return (
+    <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px dashed #E2E8F0' }}>
+      <p style={{ fontSize: '11px', fontWeight: '900', color: '#94A3B8', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>参考にした投稿</p>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+        {refs.map(p => (
+          <a key={p.id} href={p.url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: 'white', padding: '4px 8px', borderRadius: '6px', border: '1px solid #E2E8F0', fontSize: '11px', fontWeight: '700', color: '#475569', textDecoration: 'none' }}>
+            <ExternalLink size={10} /> 投稿を見る
+          </a>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 export default function TrendResearchPage() {
@@ -19,6 +76,10 @@ export default function TrendResearchPage() {
   const [period, setPeriod]     = useState('all');
   const [sortBy, setSortBy]     = useState('velocity');
   const [history, setHistory]   = useState<string[]>([]);
+
+  const [insight, setInsight] = useState<MarketInsight | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [genError, setGenError] = useState<string | null>(null);
 
   // 履歴の読み込み
   React.useEffect(() => {
@@ -47,6 +108,7 @@ export default function TrendResearchPage() {
     setIsLoading(true);
     setError(null);
     setAllPosts([]);
+    setInsight(null);
     try {
       const cleanKw = targetKeyword.replace('#', '').trim();
       const res  = await fetch(`/api/trend?tag=${encodeURIComponent(cleanKw)}`);
@@ -59,6 +121,29 @@ export default function TrendResearchPage() {
       setError(err.message);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const generateIdea = async () => {
+    if (allPosts.length === 0) return;
+    setIsGenerating(true);
+    setGenError(null);
+    setInsight(null);
+    try {
+      const topPosts = allPosts.slice(0, 10);
+      const res = await fetch('/api/generate-idea', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ posts: topPosts, keyword }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '分析エラー');
+      setInsight(data.insight);
+      setTimeout(() => document.getElementById('ai-ideas-section')?.scrollIntoView({ behavior: 'smooth' }), 100);
+    } catch (err: any) {
+      setGenError(err.message);
+    } finally {
+      setIsGenerating(false);
     }
   };
 
@@ -124,9 +209,19 @@ export default function TrendResearchPage() {
             </div>
           </div>
           {allPosts.length > 0 && (
-            <button onClick={downloadCSV} style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'white', color: '#0F172A', padding: '12px 20px', borderRadius: '12px', border: '1px solid #E2E8F0', fontWeight: '700', cursor: 'pointer', fontSize: '14px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
-              <Download size={18} /> CSVエクスポート
-            </button>
+            <div style={{ display: 'flex', gap: '12px' }}>
+              <button 
+                onClick={generateIdea} 
+                disabled={isGenerating} 
+                style={{ display: 'flex', alignItems: 'center', gap: '8px', background: isGenerating ? '#E2E8F0' : 'linear-gradient(to right, #EC4899, #8B5CF6)', color: isGenerating ? '#94A3B8' : 'white', padding: '12px 24px', borderRadius: '12px', border: 'none', fontWeight: '800', cursor: isGenerating ? 'not-allowed' : 'pointer', fontSize: '14px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
+              >
+                {isGenerating ? <RefreshCcw size={18} className="animate-spin" /> : <Sparkles size={18} />}
+                {isGenerating ? 'AI分析中...' : 'AI企画案を生成'}
+              </button>
+              <button onClick={downloadCSV} style={{ display: 'flex', alignItems: 'center', gap: '8px', backgroundColor: 'white', color: '#0F172A', padding: '12px 20px', borderRadius: '12px', border: '1px solid #E2E8F0', fontWeight: '700', cursor: 'pointer', fontSize: '14px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                <Download size={18} /> CSV保存
+              </button>
+            </div>
           )}
         </header>
 
@@ -171,9 +266,9 @@ export default function TrendResearchPage() {
             <button
               onClick={() => fetchTrendData()}
               disabled={isLoading || !keyword}
-              style={{ background: isLoading ? '#CBD5E1' : 'linear-gradient(to right, #EC4899, #8B5CF6)', color: 'white', padding: '16px 32px', borderRadius: '12px', fontWeight: '800', border: 'none', cursor: isLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', transition: 'background 0.3s' }}
+              style={{ background: isLoading ? '#CBD5E1' : '#0F172A', color: 'white', padding: '16px 32px', borderRadius: '12px', fontWeight: '800', border: 'none', cursor: isLoading ? 'not-allowed' : 'pointer', display: 'flex', alignItems: 'center', gap: '8px', fontSize: '16px', transition: 'background 0.3s' }}
             >
-              <TrendingUp size={20} />
+              {isLoading ? <RefreshCcw size={20} className="animate-spin" /> : <TrendingUp size={20} />}
               リサーチ開始
             </button>
           </div>
@@ -221,6 +316,73 @@ export default function TrendResearchPage() {
           </div>
         )}
 
+        {/* AI分析レポート */}
+        {insight && !isGenerating && (
+          <div id="ai-ideas-section" style={{ backgroundColor: 'white', padding: '32px', borderRadius: '24px', border: '1px solid #F1F5F9', marginBottom: '40px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <div style={{ width: '48px', height: '48px', backgroundColor: '#FDF2F8', borderRadius: '14px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 6px -1px rgba(236, 72, 153, 0.2)' }}>
+                  <TrendingUp size={24} color="#EC4899" />
+                </div>
+                <div>
+                  <h3 style={{ fontWeight: '900', fontSize: '24px', color: '#0F172A', margin: 0, tracking: '-0.02em' }}>
+                    トレンド市場分析レポート
+                  </h3>
+                  <p style={{ fontSize: '14px', color: '#94A3B8', fontWeight: '600', margin: '4px 0 0' }}>AIが現在のトレンドから次のヒットを予測します</p>
+                </div>
+              </div>
+              <button onClick={() => setInsight(null)} style={{ background: '#F1F5F9', border: 'none', borderRadius: '50%', padding: '8px', cursor: 'pointer', color: '#94A3B8' }}><X size={20} /></button>
+            </div>
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                {/* 1. 投稿傾向 */}
+                <div style={{ backgroundColor: '#F8FAFC', padding: '28px', borderRadius: '20px', border: '1px solid #F1F5F9', position: 'relative' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                    <div style={{ width: '24px', height: '24px', backgroundColor: '#EC4899', color: 'white', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '900' }}>1</div>
+                    <h4 style={{ fontSize: '18px', fontWeight: '900', color: '#0F172A', margin: 0 }}>投稿傾向（市場の型）</h4>
+                  </div>
+                  <p style={{ fontSize: '12px', color: '#64748B', fontWeight: 'bold', marginBottom: '20px', lineHeight: '1.5', padding: '10px', backgroundColor: 'white', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                    💡 <b>何を調べている？</b>：今、市場で「どんな見た目や構成」の投稿が伸びているかを分析しています。デザインやトーンを真似るべき「勝てる型」を特定します。
+                  </p>
+                  <HighlightedText text={insight.marketAnalysis?.trends} />
+                  <ReferencedPosts ids={insight.marketAnalysis?.referencedIds} allPosts={allPosts} />
+                </div>
+
+                {/* 2. 視聴者需要 */}
+                <div style={{ backgroundColor: '#F8FAFC', padding: '28px', borderRadius: '20px', border: '1px solid #F1F5F9', position: 'relative' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                    <div style={{ width: '24px', height: '24px', backgroundColor: '#8B5CF6', color: 'white', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '900' }}>2</div>
+                    <h4 style={{ fontSize: '18px', fontWeight: '900', color: '#0F172A', margin: 0 }}>視聴者需要（ユーザー心理）</h4>
+                  </div>
+                  <p style={{ fontSize: '12px', color: '#64748B', fontWeight: 'bold', marginBottom: '20px', lineHeight: '1.5', padding: '10px', backgroundColor: 'white', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
+                    💡 <b>何を調べている？</b>：ユーザーがこのキーワードで「何を知りたいか」「どんな悩みを解決したいか」を分析しています。共感される企画の「中身」を作るためのヒントです。
+                  </p>
+                  <HighlightedText text={insight.marketAnalysis?.audienceDemand} />
+                  <ReferencedPosts ids={insight.marketAnalysis?.referencedIds} allPosts={allPosts} />
+                </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+                {insight.strategicSeeds?.map((seed, i) => (
+                  <div key={i} style={{ backgroundColor: 'white', padding: '28px', borderRadius: '20px', border: '1px solid #F1F5F9', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '16px' }}>
+                      <span style={{ fontSize: '10px', fontWeight: '900', color: seed.type === 'REELS' ? '#8B5CF6' : '#10B981', backgroundColor: seed.type === 'REELS' ? '#F5F3FF' : '#ECFDF5', padding: '4px 8px', borderRadius: '6px', textTransform: 'uppercase' }}>{seed.type}</span>
+                      <h4 style={{ fontSize: '18px', fontWeight: '900', color: '#0F172A', margin: 0 }}>{seed.angle}</h4>
+                    </div>
+                    <p style={{ fontSize: '14px', color: '#64748B', fontWeight: '600', lineHeight: '1.6', marginBottom: '24px' }}>{seed.reason}</p>
+                    <div style={{ backgroundColor: '#FDF2F8', padding: '20px', borderRadius: '16px', borderLeft: '4px solid #EC4899', marginBottom: '16px' }}>
+                      <p style={{ fontSize: '11px', fontWeight: '900', color: '#BE185D', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>指を止めるフック案</p>
+                      <p style={{ fontSize: '16px', fontWeight: '900', color: '#0F172A', margin: 0 }}>「{seed.hook}」</p>
+                    </div>
+                    <ReferencedPosts ids={seed.referencedIds} allPosts={allPosts} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* ローディング */}
         {isLoading && (
           <div>
@@ -262,19 +424,7 @@ export default function TrendResearchPage() {
               >
                 {/* サムネイル */}
                 <div style={{ position: 'relative', width: '100%', aspectRatio: '9/16', backgroundColor: '#000' }}>
-                  {post.type === 'REELS' ? (
-                    <video 
-                      src={post.thumbnail} 
-                      muted 
-                      playsInline 
-                      loop 
-                      onMouseEnter={e => e.currentTarget.play()} 
-                      onMouseLeave={e => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
-                    />
-                  ) : (
-                    <img src={post.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  )}
+                  <img src={post.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                   {/* バッジ類 */}
                   <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {post.isTop && (

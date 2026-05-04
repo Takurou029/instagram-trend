@@ -51,21 +51,6 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      <div className="sidebar-footer">
-        <div style={{ fontSize: '10px', color: '#64748b', marginBottom: '8px', textTransform: 'uppercase', fontWeight: '700', letterSpacing: '0.05em' }}>
-          キーワード履歴
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '12px' }}>
-          {['旅行', 'カフェ', '韓国ファッション'].map((tag) => (
-            <div key={tag} style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = 'white')}
-              onMouseLeave={(e) => (e.currentTarget.style.color = '')}
-            >
-              <Hash size={12} /> {tag}
-            </div>
-          ))}
-        </div>
-      </div>
     </aside>
   );
 }

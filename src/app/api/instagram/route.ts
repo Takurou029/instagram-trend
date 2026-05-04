@@ -1,15 +1,15 @@
 export async function GET(request: Request) {
-  const { searchParams } = new URL(request.url);
-  const username = searchParams.get('username');
-
-  const accessToken = process.env.INSTAGRAM_ACCESS_TOKEN;
-  const businessId  = process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID;
-
-  if (!username || !accessToken || !businessId) {
-    return Response.json({ error: 'Missing parameters' }, { status: 400 });
-  }
-
   try {
+    const { searchParams } = new URL(request.url);
+    const username = searchParams.get('username');
+
+    const accessToken = process.env.INSTAGRAM_ACCESS_TOKEN;
+    const businessId  = process.env.INSTAGRAM_BUSINESS_ACCOUNT_ID || process.env.INSTAGRAM_BUSINESS_ID;
+
+    if (!username || !accessToken || !businessId) {
+      return Response.json({ error: 'Missing parameters' }, { status: 400 });
+    }
+
     const mediaFields = 'id,caption,media_type,media_url,thumbnail_url,permalink,timestamp,like_count,comments_count,video_view_count';
     const discoveryUrl = `https://graph.facebook.com/v19.0/${businessId}?fields=business_discovery.username(${username}){id,name,username,profile_picture_url,follows_count,followers_count,media_count,media.limit(100){${mediaFields}}}&access_token=${accessToken}`;
 
@@ -24,29 +24,29 @@ export async function GET(request: Request) {
     }
 
     const userData = data.business_discovery;
+    if (!userData) {
+        return Response.json({ error: 'Account not found' }, { status: 404 });
+    }
+
     const media: any[] = userData.media?.data || [];
 
-    // --- 統計：VIDEO + CAROUSEL を対象 ---
-    // 他人のアカウントの場合、media_type は 'VIDEO' か 'CAROUSEL_ALBUM' (または 'IMAGE')
     const reels = media.filter(m => m.media_type === 'VIDEO' || m.media_type === 'CAROUSEL_ALBUM' || m.video_view_count !== undefined);
     const stats = {
-      postsCount: userData.media_count,
-      followers:  userData.followers_count,
-      avgLikes:    Math.round(reels.reduce((s, m) => s + (m.like_count || 0), 0) / (reels.length || 1)),
-      avgComments: Math.round(reels.reduce((s, m) => s + (m.comments_count || 0), 0) / (reels.length || 1)),
+      postsCount: userData.media_count || 0,
+      followers:  userData.followers_count || 0,
+      avgLikes:    reels.length > 0 ? Math.round(reels.reduce((s, m) => s + (m.like_count || 0), 0) / reels.length) : 0,
+      avgComments: reels.length > 0 ? Math.round(reels.reduce((s, m) => s + (m.comments_count || 0), 0) / reels.length) : 0,
     };
 
-    // --- 新しい集計ロジック：日次（直近30日） ---
     const dailyChart: any[] = [];
     const now = new Date();
     for (let i = 29; i >= 0; i--) {
       const d = new Date();
       d.setDate(now.getDate() - i);
       const dateStr = d.toLocaleDateString('ja-JP', { month: '2-digit', day: '2-digit' });
-      const fullDateStr = d.toISOString().split('T')[0]; // YYYY-MM-DD
+      const fullDateStr = d.toISOString().split('T')[0];
       
-      // その日の投稿を合算
-      const postsForDay = reels.filter(m => m.timestamp.startsWith(fullDateStr));
+      const postsForDay = reels.filter(m => m.timestamp && m.timestamp.startsWith(fullDateStr));
       const dayData = postsForDay.reduce((acc, m) => {
           acc.likes += (m.like_count || 0);
           acc.views += (m.video_view_count || 0);
@@ -56,15 +56,14 @@ export async function GET(request: Request) {
       dailyChart.push({ date: dateStr, ...dayData, posts: postsForDay.length });
     }
 
-    // --- 新しい集計ロジック：月次（今月と先月） ---
     const monthlyChart: any[] = [];
-    const currentMonth = now.toISOString().slice(0, 7); // YYYY-MM
+    const currentMonth = now.toISOString().slice(0, 7);
     const lastMonthDate = new Date();
     lastMonthDate.setMonth(now.getMonth() - 1);
-    const lastMonth = lastMonthDate.toISOString().slice(0, 7); // YYYY-MM
+    const lastMonth = lastMonthDate.toISOString().slice(0, 7);
 
     [lastMonth, currentMonth].forEach(month => {
-      const postsForMonth = reels.filter(m => m.timestamp.startsWith(month));
+      const postsForMonth = reels.filter(m => m.timestamp && m.timestamp.startsWith(month));
       const monthData = postsForMonth.reduce((acc, m) => {
           acc.likes += (m.like_count || 0);
           acc.views += (m.video_view_count || 0);
@@ -78,7 +77,6 @@ export async function GET(request: Request) {
       });
     });
 
-    // --- トップ3投稿：全メディアをいいね数降順でソート ---
     const topPosts = [...media]
       .sort((a, b) => (b.like_count || 0) - (a.like_count || 0))
       .slice(0, 3)
@@ -88,7 +86,6 @@ export async function GET(request: Request) {
         mediaType: m.media_type === 'VIDEO' ? 'REELS'
                  : m.media_type === 'CAROUSEL_ALBUM' ? 'CAROUSEL'
                  : 'IMAGE',
-        // VIDEO は thumbnail_url、それ以外は media_url
         thumbnail: m.media_type === 'VIDEO' ? (m.thumbnail_url || m.media_url) : m.media_url,
         permalink: m.permalink,
         likes:     m.like_count     || 0,
@@ -107,7 +104,8 @@ export async function GET(request: Request) {
       topPosts,
     });
 
-  } catch {
-    return Response.json({ error: 'Failed to fetch Instagram data' }, { status: 500 });
+  } catch (error: any) {
+    console.error('Instagram API Error:', error);
+    return Response.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }
