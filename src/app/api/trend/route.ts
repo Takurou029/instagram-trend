@@ -50,7 +50,8 @@ export async function GET(request: Request) {
     const hashTagCount = await fetchHashtagCount(hashtagId);
 
     // 2. top_media と recent_media を取得
-    const lightweightFields = 'id,media_type,media_url,thumbnail_url,permalink,like_count,caption,comments_count,timestamp';
+    // ハッシュタグ検索APIでは thumbnail_url はサポートされていないため除外
+    const lightweightFields = 'id,media_type,media_url,permalink,like_count,caption,comments_count,timestamp';
     
     const fetchMedia = async (type: 'top_media' | 'recent_media') => {
       try {
@@ -87,7 +88,6 @@ export async function GET(request: Request) {
     for (const m of recentRaw) { if (!seen.has(m.id)) merged.push({ ...m, isTop: false }); }
 
     if (merged.length === 0) {
-      // API自体は成功したが中身が空の場合の詳細メッセージ
       const detail = (topRes.error || recentRes.error) ? ` (一部エラー: ${topRes.error || recentRes.error})` : "";
       return Response.json({ error: `ハッシュタグ「#${cleanTag}」の投稿が見つかりませんでした。Meta側の制限によりデータが公開されていない可能性があります${detail}。` }, { status: 404 });
     }
@@ -109,7 +109,7 @@ export async function GET(request: Request) {
       return {
         id:        m.id,
         title:     m.caption ? m.caption.slice(0, 80) + '…' : 'Instagram Post',
-        thumbnail: m.media_type === 'VIDEO' ? (m.thumbnail_url || m.media_url) : m.media_url,
+        thumbnail: m.media_url, // ハッシュタグ検索では media_url がサムネイルを兼ねる場合が多い
         url:       m.permalink,
         likes,
         comments,
