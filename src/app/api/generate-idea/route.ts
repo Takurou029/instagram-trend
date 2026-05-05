@@ -64,17 +64,26 @@ ID: ${p.id}
   `;
 
     let text = "";
-    try {
-      // 2026年5月現在の最新主力モデル Gemini 3.1 Flash を使用
-      const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash" });
-      const result = await model.generateContent(prompt);
-      text = result.response.text();
-    } catch (e: any) {
-      console.warn("Gemini 3.1 failed, falling back to 2.5:", e.message);
-      // フォールバックとして安定版の 2.5 を使用
-      const fallbackModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-      const result = await fallbackModel.generateContent(prompt);
-      text = result.response.text();
+    const modelsToTry = ["gemini-3.1-flash", "gemini-2.5-flash", "gemini-1.5-flash"];
+    let lastError = null;
+
+    for (const modelName of modelsToTry) {
+      try {
+        console.log(`Attempting analysis with ${modelName}...`);
+        const model = genAI.getGenerativeModel({ model: modelName });
+        const result = await model.generateContent(prompt);
+        text = result.response.text();
+        if (text) break; // 成功したらループを抜ける
+      } catch (e: any) {
+        lastError = e;
+        console.warn(`${modelName} failed:`, e.message);
+        // 次のモデルへ（503や404などのエラー時）
+        continue;
+      }
+    }
+
+    if (!text) {
+      throw new Error(lastError?.message || "すべてのAIモデルが現在利用できません。");
     }
 
     const firstBrace = text.indexOf('{');
