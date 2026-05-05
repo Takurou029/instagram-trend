@@ -54,7 +54,7 @@ export async function GET(request: Request) {
     
     const fetchMedia = async (type: 'top_media' | 'recent_media') => {
       try {
-        const url = `https://graph.facebook.com/v21.0/${hashtagId}/${type}?user_id=${businessId}&fields=${lightweightFields}&limit=25&access_token=${accessToken}`;
+        const url = `https://graph.facebook.com/v21.0/${hashtagId}/${type}?user_id=${businessId}&fields=${lightweightFields}&limit=15&access_token=${accessToken}`;
         const res = await fetch(url);
         const data = await res.json();
         if (data.error) {
