@@ -65,13 +65,14 @@ ID: ${p.id}
 
     let text = "";
     try {
-      // 最新のGemini 2.0 Flashモデルを使用
-      const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+      // 2026年5月現在の最新主力モデル Gemini 3.1 Flash を使用
+      const model = genAI.getGenerativeModel({ model: "gemini-3.1-flash" });
       const result = await model.generateContent(prompt);
       text = result.response.text();
     } catch (e: any) {
-      console.warn("Gemini 2.0 failed, falling back to 1.5:", e.message);
-      const fallbackModel = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+      console.warn("Gemini 3.1 failed, falling back to 2.5:", e.message);
+      // フォールバックとして安定版の 2.5 を使用
+      const fallbackModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
       const result = await fallbackModel.generateContent(prompt);
       text = result.response.text();
     }
