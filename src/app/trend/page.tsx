@@ -56,11 +56,33 @@ function ReferencedPosts({ ids, allPosts }: { ids?: string[], allPosts: any[] })
 
   return (
     <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px dashed #E2E8F0' }}>
-      <p style={{ fontSize: '11px', fontWeight: '900', color: '#94A3B8', textTransform: 'uppercase', marginBottom: '8px', letterSpacing: '0.05em' }}>参考にした投稿</p>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+      <p style={{ fontSize: '11px', fontWeight: '900', color: '#94A3B8', textTransform: 'uppercase', marginBottom: '10px', letterSpacing: '0.05em' }}>分析の根拠となった投稿</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: '10px' }}>
         {refs.map(p => (
-          <a key={p.id} href={p.url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '4px', backgroundColor: 'white', padding: '4px 8px', borderRadius: '6px', border: '1px solid #E2E8F0', fontSize: '11px', fontWeight: '700', color: '#475569', textDecoration: 'none' }}>
-            <ExternalLink size={10} /> 投稿を見る
+          <a 
+            key={p.id} 
+            href={p.url} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            title={p.title}
+            style={{ 
+              display: 'block', 
+              aspectRatio: '1', 
+              borderRadius: '8px', 
+              overflow: 'hidden', 
+              border: '2px solid white', 
+              boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+              transition: 'transform 0.2s',
+              backgroundColor: '#0F172A'
+            }}
+            onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.1)'}
+            onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
+          >
+            {p.type === 'REELS' ? (
+              <video src={p.thumbnail} muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            ) : (
+              <img src={p.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+            )}
           </a>
         ))}
       </div>
@@ -439,9 +461,19 @@ export default function TrendResearchPage() {
                       muted 
                       playsInline 
                       loop 
-                      preload="metadata"
-                      onMouseEnter={e => e.currentTarget.play()} 
-                      onMouseLeave={e => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
+                      preload="auto"
+                      onMouseEnter={async (e) => {
+                        const v = e.currentTarget;
+                        try {
+                          await v.play();
+                        } catch {
+                          // Ignore
+                        }
+                      }} 
+                      onMouseLeave={(e) => {
+                        e.currentTarget.pause();
+                        e.currentTarget.currentTime = 0;
+                      }}
                       style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} 
                     />
                   ) : (
