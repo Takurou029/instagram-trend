@@ -317,6 +317,13 @@ export default function TrendResearchPage() {
         )}
 
         {/* AI分析レポート */}
+        {genError && (
+          <div style={{ backgroundColor: '#FFF7ED', borderLeft: '4px solid #F97316', padding: '16px', borderRadius: '0 12px 12px 0', marginBottom: '32px' }}>
+            <p style={{ color: '#C2410C', fontWeight: '700', fontSize: '14px' }}>AI分析エラー: {genError}</p>
+            <p style={{ color: '#9A3412', fontSize: '12px', marginTop: '4px' }}>しばらく時間をおいてから再度お試しください。連続して実行すると制限がかかる場合があります。</p>
+          </div>
+        )}
+
         {insight && !isGenerating && (
           <div id="ai-ideas-section" style={{ backgroundColor: 'white', padding: '32px', borderRadius: '24px', border: '1px solid #F1F5F9', marginBottom: '40px', boxShadow: '0 10px 15px -3px rgba(0,0,0,0.1)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '32px' }}>
@@ -342,9 +349,10 @@ export default function TrendResearchPage() {
                     <div style={{ width: '24px', height: '24px', backgroundColor: '#EC4899', color: 'white', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '900' }}>1</div>
                     <h4 style={{ fontSize: '18px', fontWeight: '900', color: '#0F172A', margin: 0 }}>投稿傾向（市場の型）</h4>
                   </div>
-                  <p style={{ fontSize: '12px', color: '#64748B', fontWeight: 'bold', marginBottom: '20px', lineHeight: '1.5', padding: '10px', backgroundColor: 'white', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-                    💡 <b>何を調べている？</b>：今、市場で「どんな見た目や構成」の投稿が伸びているかを分析しています。デザインやトーンを真似るべき「勝てる型」を特定します。
-                  </p>
+                  <div style={{ fontSize: '12px', color: '#475569', fontWeight: '600', marginBottom: '20px', lineHeight: '1.6', padding: '12px 16px', backgroundColor: 'rgba(236, 72, 153, 0.03)', borderRadius: '12px', borderLeft: '3px solid #EC4899' }}>
+                    <span style={{ color: '#EC4899', fontWeight: '900' }}>💡 何を調べている？</span><br />
+                    今、市場で「どんな見た目や構成」の投稿が伸びているかを分析しています。デザインやトーンを真似るべき「勝てる型」を特定します。
+                  </div>
                   <HighlightedText text={insight.marketAnalysis?.trends} />
                   <ReferencedPosts ids={insight.marketAnalysis?.referencedIds} allPosts={allPosts} />
                 </div>
@@ -355,9 +363,10 @@ export default function TrendResearchPage() {
                     <div style={{ width: '24px', height: '24px', backgroundColor: '#8B5CF6', color: 'white', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: '900' }}>2</div>
                     <h4 style={{ fontSize: '18px', fontWeight: '900', color: '#0F172A', margin: 0 }}>視聴者需要（ユーザー心理）</h4>
                   </div>
-                  <p style={{ fontSize: '12px', color: '#64748B', fontWeight: 'bold', marginBottom: '20px', lineHeight: '1.5', padding: '10px', backgroundColor: 'white', borderRadius: '10px', border: '1px solid #E2E8F0' }}>
-                    💡 <b>何を調べている？</b>：ユーザーがこのキーワードで「何を知りたいか」「どんな悩みを解決したいか」を分析しています。共感される企画の「中身」を作るためのヒントです。
-                  </p>
+                  <div style={{ fontSize: '12px', color: '#475569', fontWeight: '600', marginBottom: '20px', lineHeight: '1.6', padding: '12px 16px', backgroundColor: 'rgba(139, 92, 246, 0.03)', borderRadius: '12px', borderLeft: '3px solid #8B5CF6' }}>
+                    <span style={{ color: '#8B5CF6', fontWeight: '900' }}>💡 何を調べている？</span><br />
+                    ユーザーがこのキーワードで「何を知りたいか」「どんな悩みを解決したいか」を分析しています。共感される企画の「中身」を作るためのヒントです。
+                  </div>
                   <HighlightedText text={insight.marketAnalysis?.audienceDemand} />
                   <ReferencedPosts ids={insight.marketAnalysis?.referencedIds} allPosts={allPosts} />
                 </div>
@@ -423,8 +432,21 @@ export default function TrendResearchPage() {
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 4px rgba(0,0,0,0.02)'; }}
               >
                 {/* サムネイル */}
-                <div style={{ position: 'relative', width: '100%', aspectRatio: '9/16', backgroundColor: '#000' }}>
-                  <img src={post.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <div style={{ position: 'relative', width: '100%', aspectRatio: '9/16', backgroundColor: '#0F172A', overflow: 'hidden' }}>
+                  {post.type === 'REELS' ? (
+                    <video 
+                      src={post.thumbnail} 
+                      muted 
+                      playsInline 
+                      loop 
+                      preload="metadata"
+                      onMouseEnter={e => e.currentTarget.play()} 
+                      onMouseLeave={e => { e.currentTarget.pause(); e.currentTarget.currentTime = 0; }}
+                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} 
+                    />
+                  ) : (
+                    <img src={post.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                  )}
                   {/* バッジ類 */}
                   <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                     {post.isTop && (
