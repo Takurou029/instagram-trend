@@ -15,25 +15,31 @@ export async function GET(request: Request) {
     // 1. ハッシュタグ ID を取得
     const fetchHashtagId = async (t: string) => {
       try {
-        const res = await fetch(`https://graph.facebook.com/v19.0/ig_hashtag_search?user_id=${businessId}&q=${encodeURIComponent(t)}&access_token=${accessToken}`);
+        const res = await fetch(`https://graph.facebook.com/v21.0/ig_hashtag_search?user_id=${businessId}&q=${encodeURIComponent(t)}&access_token=${accessToken}`);
         const data = await res.json();
+        if (data.error) throw new Error(data.error.message);
         return (data.data && data.data.length > 0) ? data.data[0].id : null;
-      } catch (e) {
+      } catch (e: any) {
         console.error(`Error fetching ID for ${t}:`, e);
-        return null;
+        throw e;
       }
     };
 
-    const hashtagId = await fetchHashtagId(cleanTag);
+    let hashtagId;
+    try {
+      hashtagId = await fetchHashtagId(cleanTag);
+    } catch (e: any) {
+      return Response.json({ error: `APIエラー: ${e.message}` }, { status: 500 });
+    }
 
     if (!hashtagId) {
-      return Response.json({ error: `ハッシュタグ「#${cleanTag}」が見つかりませんでした。` }, { status: 404 });
+      return Response.json({ error: `ハッシュタグ「#${cleanTag}」がInstagram上で見つかりませんでした。別の言葉で試してください。` }, { status: 404 });
     }
 
     // 1.5 ハッシュタグの総投稿数を取得
     const fetchHashtagCount = async (id: string) => {
       try {
-        const res = await fetch(`https://graph.facebook.com/v19.0/${id}?fields=media_count&access_token=${accessToken}`);
+        const res = await fetch(`https://graph.facebook.com/v21.0/${id}?fields=media_count&access_token=${accessToken}`);
         const data = await res.json();
         return data.media_count || 0;
       } catch (e) {
@@ -43,29 +49,35 @@ export async function GET(request: Request) {
 
     const hashTagCount = await fetchHashtagCount(hashtagId);
 
-    // 2. top_media と recent_media を軽量リクエストで取得
+    // 2. top_media と recent_media を取得
     const lightweightFields = 'id,media_type,media_url,thumbnail_url,permalink,like_count,caption,comments_count,timestamp';
     
     const fetchMedia = async (type: 'top_media' | 'recent_media') => {
       try {
-        const url = `https://graph.facebook.com/v19.0/${hashtagId}/${type}?user_id=${businessId}&fields=${lightweightFields}&limit=25&access_token=${accessToken}`;
+        const url = `https://graph.facebook.com/v21.0/${hashtagId}/${type}?user_id=${businessId}&fields=${lightweightFields}&limit=25&access_token=${accessToken}`;
         const res = await fetch(url);
         const data = await res.json();
         if (data.error) {
-          console.error(`Error fetching ${type}:`, data.error.message);
-          return [];
+          return { error: data.error.message, data: [] };
         }
-        return data.data || [];
-      } catch (e) {
-        console.error(`System error fetching ${type}:`, e);
-        return [];
+        return { data: data.data || [] };
+      } catch (e: any) {
+        return { error: e.message, data: [] };
       }
     };
 
-    const [topRaw, recentRaw] = await Promise.all([
+    const [topRes, recentRes] = await Promise.all([
       fetchMedia('top_media'),
       fetchMedia('recent_media')
     ]);
+
+    // エラーチェック
+    if (topRes.error && recentRes.error) {
+      return Response.json({ error: `Meta APIエラー: ${topRes.error}` }, { status: 500 });
+    }
+
+    const topRaw = topRes.data;
+    const recentRaw = recentRes.data;
 
     // 3. マージ（重複 ID を除去）し、source フラグを付与
     const seen = new Set<string>();
@@ -75,7 +87,9 @@ export async function GET(request: Request) {
     for (const m of recentRaw) { if (!seen.has(m.id)) merged.push({ ...m, isTop: false }); }
 
     if (merged.length === 0) {
-      return Response.json({ error: `ハッシュタグ「#${cleanTag}」の投稿が見つかりませんでした。タグがMetaによって制限されているか、データが取得できません。` }, { status: 404 });
+      // API自体は成功したが中身が空の場合の詳細メッセージ
+      const detail = (topRes.error || recentRes.error) ? ` (一部エラー: ${topRes.error || recentRes.error})` : "";
+      return Response.json({ error: `ハッシュタグ「#${cleanTag}」の投稿が見つかりませんでした。Meta側の制限によりデータが公開されていない可能性があります${detail}。` }, { status: 404 });
     }
 
     const usedTag = cleanTag;
