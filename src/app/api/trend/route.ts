@@ -1,3 +1,7 @@
+// ハッシュタグIDキャッシュ（週30件制限の消耗を防ぐ）
+const hashtagIdCache = new Map<string, { id: string; cachedAt: number }>();
+const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7日間
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -12,13 +16,20 @@ export async function GET(request: Request) {
 
     const cleanTag = tag.replace('#', '').trim();
 
-    // 1. ハッシュタグ ID を取得 (安定版 v19.0 を使用)
+    // 1. ハッシュタグ ID を取得（キャッシュ優先で週30件制限を節約）
     const fetchHashtagId = async (t: string) => {
+      const cacheKey = t.toLowerCase();
+      const cached = hashtagIdCache.get(cacheKey);
+      if (cached && Date.now() - cached.cachedAt < CACHE_TTL_MS) {
+        return cached.id;
+      }
       try {
         const res = await fetch(`https://graph.facebook.com/v19.0/ig_hashtag_search?user_id=${businessId}&q=${encodeURIComponent(t)}&access_token=${accessToken}`);
         const data = await res.json();
         if (data.error) throw new Error(data.error.message);
-        return (data.data && data.data.length > 0) ? data.data[0].id : null;
+        const id = (data.data && data.data.length > 0) ? data.data[0].id : null;
+        if (id) hashtagIdCache.set(cacheKey, { id, cachedAt: Date.now() });
+        return id;
       } catch (e: any) {
         console.error(`Error fetching ID for ${t}:`, e);
         throw e;
@@ -50,7 +61,7 @@ export async function GET(request: Request) {
     const hashTagCount = await fetchHashtagCount(hashtagId);
 
     // 2. top_media と recent_media を取得 (リミットを 10 に下げて負荷を最小化)
-    const lightweightFields = 'id,media_type,media_url,permalink,like_count,caption,comments_count,timestamp';
+    const lightweightFields = 'id,media_type,media_url,thumbnail_url,permalink,like_count,caption,comments_count,timestamp';
     
     const fetchMedia = async (type: 'top_media' | 'recent_media') => {
       try {
@@ -102,10 +113,12 @@ export async function GET(request: Request) {
       const comments  = m.comments_count || 0;
       const velocity  = Math.round((likes + comments * 2) / hoursAgo);
 
+      // 動画(REELS)はthumbnail_url、画像はmedia_urlを使用
+      const thumbnailUrl = m.media_type === 'VIDEO' ? (m.thumbnail_url || m.media_url) : m.media_url;
       return {
         id:        m.id,
         title:     m.caption ? m.caption.slice(0, 80) + '…' : 'Instagram Post',
-        thumbnail: m.media_url,
+        thumbnail: thumbnailUrl,
         url:       m.permalink,
         likes,
         comments,

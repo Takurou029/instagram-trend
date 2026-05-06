@@ -64,26 +64,46 @@ ID: ${p.id}
   `;
 
     let text = "";
-    const modelsToTry = ["gemini-3.1-flash", "gemini-2.5-flash", "gemini-1.5-flash"];
-    let lastError = null;
+    // gemini-2.0-flash は無料枠ゼロのため除外
+    const modelsToTry = ["gemini-2.5-flash", "gemini-3-flash-preview", "gemini-2.5-flash-lite"];
+    const errors: string[] = [];
 
     for (const modelName of modelsToTry) {
-      try {
-        console.log(`Attempting analysis with ${modelName}...`);
-        const model = genAI.getGenerativeModel({ model: modelName });
-        const result = await model.generateContent(prompt);
-        text = result.response.text();
-        if (text) break; // 成功したらループを抜ける
-      } catch (e: any) {
-        lastError = e;
-        console.warn(`${modelName} failed:`, e.message);
-        // 次のモデルへ（503や404などのエラー時）
-        continue;
+      let retries = 2;
+      while (retries > 0) {
+        try {
+          console.log(`Attempting analysis with ${modelName} (retries left: ${retries})...`);
+          const model = genAI.getGenerativeModel({ model: modelName });
+          const result = await model.generateContent(prompt);
+          text = result.response.text();
+          if (text) {
+            console.log(`Success with ${modelName}`);
+            break;
+          }
+        } catch (e: any) {
+          const msg = e.message || String(e);
+          const is503 = msg.includes("503") || msg.includes("Service Unavailable");
+          const is429 = msg.includes("429") || msg.includes("Too Many Requests");
+          // 429（クォータ上限）はリトライしない、503（高負荷）はリトライ
+          if (is429 || !is503) {
+            console.error(`${modelName} failed (no retry): ${msg}`);
+            errors.push(`[${modelName}]: ${msg}`);
+            retries = 0;
+          } else {
+            retries--;
+            console.warn(`${modelName} 503, retrying... (${retries} left)`);
+            if (retries > 0) await new Promise(r => setTimeout(r, 2000));
+            else errors.push(`[${modelName}]: ${msg}`);
+          }
+          continue;
+        }
+        break;
       }
+      if (text) break;
     }
 
     if (!text) {
-      throw new Error(lastError?.message || "すべてのAIモデルが現在利用できません。");
+      throw new Error(`すべてのAIモデルが失敗しました。\n${errors.join('\n')}`);
     }
 
     const firstBrace = text.indexOf('{');

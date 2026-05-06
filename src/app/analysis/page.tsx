@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Search, RefreshCcw, X, Camera, Heart, MessageCircle, ExternalLink, Trophy } from 'lucide-react';
 import { Play } from 'lucide-react';
@@ -63,7 +64,7 @@ function TopPostsSection({ accounts }: { accounts: any[] }) {
                     {/* サムネイル */}
                     <div style={{ position: 'relative', width: '100%', aspectRatio: '1', backgroundColor: '#000', overflow: 'hidden' }}>
                       {post.thumbnail
-                        ? <img src={post.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        ? <Image src={post.thumbnail} alt="" fill style={{ objectFit: 'cover' }} />
                         : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Camera size={32} color="#475569" /></div>
                       }
                       {/* 順位バッジ */}
@@ -313,7 +314,7 @@ export default function InstagramAnalysisPage() {
               <div style={{ height: '6px', width: '100%', backgroundColor: acc.color }} />
               <div style={{ padding: '32px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '32px' }}>
-                  <img src={acc.avatar} style={{ width: '64px', height: '64px', borderRadius: '50%', border: `3px solid ${acc.color}`, padding: '2px' }} alt="" />
+                  <Image src={acc.avatar} alt="" width={64} height={64} style={{ borderRadius: '50%', border: `3px solid ${acc.color}`, padding: '2px' }} />
                   <div>
                     <h3 style={{ fontWeight: '800', fontSize: '20px', color: '#0F172A', margin: 0 }}>{acc.name}</h3>
                     <span style={{ color: '#94A3B8', fontSize: '14px' }}>@{acc.username}</span>

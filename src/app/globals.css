@@ -274,6 +274,26 @@ body {
   }
 }
 
+/* ハンバーガーボタン（モバイルのみ） */
+.hamburger-btn {
+  display: none;
+}
+
+/* サイドバー内の閉じるボタン（デスクトップでは非表示） */
+.sidebar-close-btn {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  line-height: 0;
+}
+
+/* モバイルドロワー */
+.mobile-drawer-overlay {
+  display: none;
+}
+
 @media (max-width: 768px) {
   .sidebar {
     display: none;
@@ -281,5 +301,60 @@ body {
   .main-content {
     margin-left: 0;
     padding: 16px;
+    padding-top: 64px;
+  }
+
+  /* ハンバーガーボタンを表示 */
+  .hamburger-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: fixed;
+    top: 14px;
+    left: 16px;
+    z-index: 200;
+    background-color: var(--bg-sidebar);
+    color: white;
+    border: none;
+    border-radius: 10px;
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+
+  /* 閉じるボタンを表示 */
+  .sidebar-close-btn {
+    display: flex;
+  }
+
+  /* ドロワーオーバーレイ */
+  .mobile-drawer-overlay {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 300;
+    backdrop-filter: blur(2px);
+  }
+
+  /* ドロワー本体 */
+  .mobile-drawer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 260px;
+    height: 100%;
+    background-color: var(--bg-sidebar);
+    color: var(--sidebar-text);
+    display: flex;
+    flex-direction: column;
+    padding: 24px 0;
+    animation: slideIn 0.25s ease;
+  }
+
+  @keyframes slideIn {
+    from { transform: translateX(-100%); }
+    to   { transform: translateX(0); }
   }
 }

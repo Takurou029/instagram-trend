@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
+import Image from 'next/image';
 import { Search, Heart, MessageCircle, ExternalLink, TrendingUp, Camera, Download, Flame, X, Sparkles, RefreshCcw, Zap } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 
@@ -65,12 +66,13 @@ function ReferencedPosts({ ids, allPosts }: { ids?: string[], allPosts: any[] })
             target="_blank" 
             rel="noopener noreferrer" 
             title={p.title}
-            style={{ 
-              display: 'block', 
-              aspectRatio: '1', 
-              borderRadius: '8px', 
-              overflow: 'hidden', 
-              border: '2px solid white', 
+            style={{
+              display: 'block',
+              position: 'relative',
+              aspectRatio: '1',
+              borderRadius: '8px',
+              overflow: 'hidden',
+              border: '2px solid white',
               boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
               transition: 'transform 0.2s',
               backgroundColor: '#0F172A'
@@ -81,7 +83,7 @@ function ReferencedPosts({ ids, allPosts }: { ids?: string[], allPosts: any[] })
             {p.type === 'REELS' ? (
               <video src={p.thumbnail} muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
-              <img src={p.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <Image src={p.thumbnail} alt="" fill style={{ objectFit: 'cover' }} />
             )}
           </a>
         ))}
@@ -95,7 +97,6 @@ export default function TrendResearchPage() {
   const [allPosts, setAllPosts] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError]       = useState<string | null>(null);
-  const [period, setPeriod]     = useState('all');
   const [sortBy, setSortBy]     = useState('velocity');
   const [history, setHistory]   = useState<string[]>([]);
 
@@ -170,24 +171,12 @@ export default function TrendResearchPage() {
   };
 
   const filteredPosts = useMemo(() => {
-    let result = [...allPosts];
-
-    if (period !== 'all') {
-      const offsets: Record<string, number> = {
-        '24h': 24 * 3_600_000,
-        '7d':  7  * 24 * 3_600_000,
-        '30d': 30 * 24 * 3_600_000,
-      };
-      const cutoff = Date.now() - offsets[period];
-      result = result.filter(p => new Date(p.timestamp).getTime() >= cutoff);
-    }
-
+    const result = [...allPosts];
     if (sortBy === 'velocity') result.sort((a, b) => b.velocity - a.velocity);
     else if (sortBy === 'likes')  result.sort((a, b) => b.likes - a.likes);
     else result.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-
     return result;
-  }, [allPosts, period, sortBy]);
+  }, [allPosts, sortBy]);
 
   const downloadCSV = () => {
     if (filteredPosts.length === 0) return;
@@ -200,7 +189,7 @@ export default function TrendResearchPage() {
     const blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
     const url  = URL.createObjectURL(blob);
     const a    = document.createElement('a');
-    a.href = url; a.download = `trend_${keyword}_${period}.csv`;
+    a.href = url; a.download = `trend_${keyword}.csv`;
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
   };
 
@@ -297,18 +286,6 @@ export default function TrendResearchPage() {
 
           {allPosts.length > 0 && !isLoading && (
             <div style={{ display: 'flex', gap: '24px', marginTop: '24px', paddingTop: '24px', borderTop: '1px solid #F1F5F9', flexWrap: 'wrap', alignItems: 'center' }}>
-              {/* 期間 */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                <span style={{ fontSize: '11px', fontWeight: '800', color: '#94A3B8', textTransform: 'uppercase' }}>期間</span>
-                <div style={{ display: 'flex', backgroundColor: '#F1F5F9', padding: '4px', borderRadius: '10px' }}>
-                  {[{ id: 'all', label: '全期間' }, { id: '24h', label: '24時間' }, { id: '7d', label: '7日間' }, { id: '30d', label: '30日間' }].map(p => (
-                    <button key={p.id} onClick={() => setPeriod(p.id)} style={{ padding: '6px 12px', borderRadius: '8px', border: 'none', fontSize: '12px', fontWeight: '700', cursor: 'pointer', backgroundColor: period === p.id ? 'white' : 'transparent', color: period === p.id ? '#0F172A' : '#64748B', boxShadow: period === p.id ? '0 2px 4px rgba(0,0,0,0.05)' : 'none' }}>
-                      {p.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
               {/* 並び替え */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
                 <span style={{ fontSize: '11px', fontWeight: '800', color: '#94A3B8', textTransform: 'uppercase' }}>並び替え</span>
@@ -325,8 +302,18 @@ export default function TrendResearchPage() {
                 </div>
               </div>
 
-              <div style={{ marginLeft: 'auto', fontSize: '13px', color: '#64748B', fontWeight: '500' }}>
-                表示: <span style={{ color: '#0F172A', fontWeight: '800' }}>{filteredPosts.length}</span> / {allPosts.length} 件
+              <div style={{ marginLeft: 'auto', display: 'flex', alignItems: 'center', gap: '16px' }}>
+                <span style={{ fontSize: '13px', color: '#64748B', fontWeight: '500' }}>
+                  表示: <span style={{ color: '#0F172A', fontWeight: '800' }}>{filteredPosts.length}</span> 件
+                </span>
+                <button
+                  onClick={generateIdea}
+                  disabled={isGenerating}
+                  style={{ display: 'flex', alignItems: 'center', gap: '8px', background: isGenerating ? '#E2E8F0' : 'linear-gradient(to right, #EC4899, #8B5CF6)', color: isGenerating ? '#94A3B8' : 'white', padding: '10px 20px', borderRadius: '10px', border: 'none', fontWeight: '800', cursor: isGenerating ? 'not-allowed' : 'pointer', fontSize: '13px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.1)' }}
+                >
+                  {isGenerating ? <RefreshCcw size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                  {isGenerating ? 'AI分析中...' : 'AI企画案を生成'}
+                </button>
               </div>
             </div>
           )}
@@ -354,7 +341,7 @@ export default function TrendResearchPage() {
                   <TrendingUp size={24} color="#EC4899" />
                 </div>
                 <div>
-                  <h3 style={{ fontWeight: '900', fontSize: '24px', color: '#0F172A', margin: 0, tracking: '-0.02em' }}>
+                  <h3 style={{ fontWeight: '900', fontSize: '24px', color: '#0F172A', margin: 0, letterSpacing: '-0.02em' }}>
                     トレンド市場分析レポート
                   </h3>
                   <p style={{ fontSize: '14px', color: '#94A3B8', fontWeight: '600', margin: '4px 0 0' }}>AIが現在のトレンドから次のヒットを予測します</p>
@@ -477,7 +464,7 @@ export default function TrendResearchPage() {
                       style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} 
                     />
                   ) : (
-                    <img src={post.thumbnail} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                    <Image src={post.thumbnail} alt="" fill style={{ objectFit: 'cover' }} />
                   )}
                   {/* バッジ類 */}
                   <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -524,13 +511,6 @@ export default function TrendResearchPage() {
               </div>
             ))}
 
-            {allPosts.length > 0 && filteredPosts.length === 0 && (
-              <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '80px 0', color: '#94A3B8' }}>
-                <Camera size={56} style={{ opacity: 0.15, marginBottom: '16px' }} />
-                <p style={{ fontSize: '15px', fontWeight: '600' }}>選択した期間の投稿が見つかりませんでした</p>
-                <p style={{ fontSize: '12px', marginTop: '6px' }}>「全期間」に切り替えると確認できます</p>
-              </div>
-            )}
 
             {allPosts.length === 0 && !error && (
               <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '80px 0', color: '#94A3B8' }}>
