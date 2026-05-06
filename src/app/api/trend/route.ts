@@ -61,7 +61,7 @@ export async function GET(request: Request) {
     const hashTagCount = await fetchHashtagCount(hashtagId);
 
     // 2. top_media と recent_media を取得 (リミットを 10 に下げて負荷を最小化)
-    const lightweightFields = 'id,media_type,media_url,thumbnail_url,permalink,like_count,caption,comments_count,timestamp';
+    const lightweightFields = 'id,media_type,media_url,permalink,like_count,caption,comments_count,timestamp';
     
     const fetchMedia = async (type: 'top_media' | 'recent_media') => {
       try {
@@ -113,12 +113,10 @@ export async function GET(request: Request) {
       const comments  = m.comments_count || 0;
       const velocity  = Math.round((likes + comments * 2) / hoursAgo);
 
-      // 動画(REELS)はthumbnail_url、画像はmedia_urlを使用
-      const thumbnailUrl = m.media_type === 'VIDEO' ? (m.thumbnail_url || m.media_url) : m.media_url;
       return {
         id:        m.id,
         title:     m.caption ? m.caption.slice(0, 80) + '…' : 'Instagram Post',
-        thumbnail: thumbnailUrl,
+        thumbnail: m.media_url,
         url:       m.permalink,
         likes,
         comments,
