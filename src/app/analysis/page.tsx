@@ -25,7 +25,7 @@ function AiAnalysisPanel({ analysis }: { analysis: any }) {
     { key: 'weaknesses',          label: '改善点',             color: '#F59E0B', bg: '#FFFBEB', border: '#FDE68A' },
     { key: 'highEngagementTraits', label: '高EG投稿の型',       color: '#3B82F6', bg: '#EFF6FF', border: '#BFDBFE' },
     { key: 'lowEngagementTraits',  label: '低EG投稿の型',       color: '#94A3B8', bg: '#F8FAFC', border: '#E2E8F0' },
-    { key: 'strategy',             label: '90日戦略アドバイス', color: '#EC4899', bg: '#FDF2F8', border: '#FBCFE8' },
+    { key: 'strategy',             label: '今後の戦略',         color: '#EC4899', bg: '#FDF2F8', border: '#FBCFE8' },
   ];
 
   return (
