@@ -17,7 +17,8 @@ export async function POST(req: Request) {
     const formatPosts = (posts: any[], label: string) =>
       posts.map((p, i) => `【${label}${i + 1}】
 いいね: ${p.likes} | コメント: ${p.comments} | タイプ: ${p.mediaType}
-キャプション: ${p.caption || '（なし）'}`).join('\n\n');
+キャプション: ${p.caption || '（なし）'}
+投稿日: ${p.timestamp ? new Date(p.timestamp).toLocaleDateString('ja-JP') : '不明'}`).join('\n\n');
 
     const prompt = `
 あなたは2026年最新のInstagramアルゴリズムを熟知した、超戦略的SNSアナリストです。
@@ -39,8 +40,9 @@ ${formatPosts(bottomPosts || [], '低EG')}
 ### 指示:
 1. アスタリスク（*）の使用禁止
 2. ダラダラとした文章は禁止。「見出し」と「短い解説」を組み合わせて情報を構造化する
-3. 強みと弱みは、投稿データから読み取れる客観的な事実に基づくこと
-4. 戦略アドバイスは、このアカウントが今後集中すべき具体的な行動を優先順に提示すること
+3. 強みと弱みは、投稿データ（いいね数・タイプ・キャプションのトーン・テーマ・表現スタイル）から読み取れる客観的な事実に基づくこと
+4. キャプションのパターン（語調・テーマ・ハッシュタグ・CTA有無など）を高EGと低EGで比較し、分析に必ず反映すること
+5. 戦略アドバイスは、このアカウントが今後集中すべき具体的な行動を優先順に提示すること
 
 ### 出力形式 (JSON):
 {

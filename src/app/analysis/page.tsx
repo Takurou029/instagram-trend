@@ -19,26 +19,121 @@ function formatDate(ts: string) {
   return new Date(ts).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' });
 }
 
-function AiAnalysisPanel({ analysis }: { analysis: any }) {
+function HighlightedTextAnalysis({ text }: { text: string }) {
+  if (!text) return null;
+  const parts = text.split(/(\【.*?\】)/g);
+  return (
+    <>
+      {parts.map((part, i) =>
+        part.startsWith('【') && part.endsWith('】') ? (
+          <span key={i} style={{ display: 'block', fontSize: '10px', fontWeight: '900', color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '4px', marginTop: i > 0 ? '14px' : '0' }}>
+            {part.slice(1, -1)}
+          </span>
+        ) : (
+          <span key={i} style={{ fontSize: '14px', fontWeight: '600', color: '#1E293B', lineHeight: '1.75' }}>
+            {part}
+          </span>
+        )
+      )}
+    </>
+  );
+}
+
+function PostThumbnailRow({ posts, label }: { posts: any[], label: string }) {
+  if (!posts || posts.length === 0) return null;
+  return (
+    <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px dashed #E2E8F0' }}>
+      <p style={{ fontSize: '11px', fontWeight: '900', color: '#94A3B8', textTransform: 'uppercase', marginBottom: '10px', letterSpacing: '0.05em' }}>{label}</p>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(60px, 1fr))', gap: '8px' }}>
+        {posts.map((p: any) => (
+          <a
+            key={p.id}
+            href={p.permalink}
+            target="_blank"
+            rel="noopener noreferrer"
+            title={p.caption}
+            style={{ display: 'block', position: 'relative', aspectRatio: '1', borderRadius: '8px', overflow: 'hidden', border: '2px solid white', boxShadow: '0 2px 4px rgba(0,0,0,0.1)', transition: 'transform 0.2s', backgroundColor: '#0F172A' }}
+            onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.1)'; }}
+            onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
+          >
+            {p.thumbnail
+              ? <Image src={p.thumbnail} alt="" fill style={{ objectFit: 'cover' }} />
+              : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Camera size={16} color="#475569" /></div>
+            }
+            <div style={{ position: 'absolute', bottom: '3px', left: '3px', right: '3px', display: 'flex', alignItems: 'center', gap: '2px', backgroundColor: 'rgba(0,0,0,0.72)', borderRadius: '4px', padding: '2px 4px' }}>
+              <Heart size={7} fill="white" color="white" />
+              <span style={{ fontSize: '8px', color: 'white', fontWeight: '800' }}>{p.likes >= 1000 ? `${(p.likes/1000).toFixed(1)}k` : p.likes}</span>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function AiAnalysisPanel({ analysis, topPostsAI, bottomPosts }: { analysis: any; topPostsAI: any[]; bottomPosts: any[] }) {
   const sections = [
-    { key: 'strengths',           label: '強み',               color: '#10B981', bg: '#F0FDF4', border: '#A7F3D0' },
-    { key: 'weaknesses',          label: '改善点',             color: '#F59E0B', bg: '#FFFBEB', border: '#FDE68A' },
-    { key: 'highEngagementTraits', label: '高EG投稿の型',       color: '#3B82F6', bg: '#EFF6FF', border: '#BFDBFE' },
-    { key: 'lowEngagementTraits',  label: '低EG投稿の型',       color: '#94A3B8', bg: '#F8FAFC', border: '#E2E8F0' },
-    { key: 'strategy',             label: '今後の戦略',         color: '#EC4899', bg: '#FDF2F8', border: '#FBCFE8' },
+    {
+      key: 'strengths', num: '1', label: '強み',
+      color: '#10B981', bg: '#F0FDF4', border: '#A7F3D0',
+      hint: '高EG投稿のデータ・キャプションから、このアカウントの強い点を特定しています。',
+      posts: topPostsAI, postsLabel: '高エンゲージメント投稿（根拠）',
+      fullWidth: false,
+    },
+    {
+      key: 'weaknesses', num: '2', label: '改善点',
+      color: '#F59E0B', bg: '#FFFBEB', border: '#FDE68A',
+      hint: '低EG投稿のデータ・キャプションから課題を特定しています。',
+      posts: bottomPosts, postsLabel: '低エンゲージメント投稿（根拠）',
+      fullWidth: false,
+    },
+    {
+      key: 'highEngagementTraits', num: '3', label: '高EG投稿の型',
+      color: '#3B82F6', bg: '#EFF6FF', border: '#BFDBFE',
+      hint: '伸びている投稿に共通するフォーマット・テーマ・キャプションのトーンを抽出しています。',
+      posts: topPostsAI, postsLabel: '参照投稿',
+      fullWidth: false,
+    },
+    {
+      key: 'lowEngagementTraits', num: '4', label: '低EG投稿の型',
+      color: '#94A3B8', bg: '#F8FAFC', border: '#E2E8F0',
+      hint: '伸びていない投稿に共通するパターンを特定しています。',
+      posts: bottomPosts, postsLabel: '参照投稿',
+      fullWidth: false,
+    },
+    {
+      key: 'strategy', num: '5', label: '今後の戦略',
+      color: '#EC4899', bg: '#FDF2F8', border: '#FBCFE8',
+      hint: '上記の分析に基づき、今後集中すべき施策を優先順に提示します。',
+      posts: null, postsLabel: '',
+      fullWidth: true,
+    },
   ];
 
   return (
     <div style={{ marginTop: '28px', paddingTop: '28px', borderTop: '1px solid #F1F5F9' }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
-        <Sparkles size={18} color="#EC4899" />
-        <span style={{ fontSize: '16px', fontWeight: '800', color: '#0F172A' }}>AIインサイト</span>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '24px' }}>
+        <div style={{ width: '40px', height: '40px', backgroundColor: '#FDF2F8', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 6px -1px rgba(236,72,153,0.2)' }}>
+          <Sparkles size={20} color="#EC4899" />
+        </div>
+        <div>
+          <span style={{ fontSize: '18px', fontWeight: '900', color: '#0F172A' }}>AIインサイト</span>
+          <p style={{ fontSize: '12px', color: '#94A3B8', margin: '2px 0 0' }}>直近100件の投稿データをもとにAIが分析しました</p>
+        </div>
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
         {sections.map(s => (
-          <div key={s.key} style={{ backgroundColor: s.bg, border: `1px solid ${s.border}`, borderRadius: '16px', padding: '20px', gridColumn: s.key === 'strategy' ? '1 / -1' : 'auto' }}>
-            <div style={{ fontSize: '11px', fontWeight: '800', color: s.color, textTransform: 'uppercase', marginBottom: '10px', letterSpacing: '0.05em' }}>{s.label}</div>
-            <p style={{ fontSize: '13px', color: '#1E293B', lineHeight: '1.75', margin: 0, whiteSpace: 'pre-line' }}>{analysis[s.key]}</p>
+          <div key={s.key} style={{ backgroundColor: s.bg, border: `1px solid ${s.border}`, borderRadius: '20px', padding: '24px', gridColumn: s.fullWidth ? '1 / -1' : 'auto' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px' }}>
+              <div style={{ width: '24px', height: '24px', backgroundColor: s.color, color: 'white', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '900', flexShrink: 0 }}>{s.num}</div>
+              <h4 style={{ fontSize: '16px', fontWeight: '900', color: '#0F172A', margin: 0 }}>{s.label}</h4>
+            </div>
+            <div style={{ fontSize: '11px', color: '#475569', fontWeight: '600', marginBottom: '16px', lineHeight: '1.6', padding: '10px 14px', borderRadius: '10px', borderLeft: `3px solid ${s.color}`, backgroundColor: 'rgba(255,255,255,0.6)' }}>
+              💡 {s.hint}
+            </div>
+            <HighlightedTextAnalysis text={analysis[s.key]} />
+            {s.posts && s.posts.length > 0 && <PostThumbnailRow posts={s.posts} label={s.postsLabel} />}
           </div>
         ))}
       </div>
@@ -204,7 +299,13 @@ function TopPostsSection({ accounts, aiAnalyses, analyzingAccounts, onAnalyze }:
             </div>
 
             {/* AI分析結果 */}
-            {analysis && isExpanded && <AiAnalysisPanel analysis={analysis} />}
+            {analysis && isExpanded && (
+              <AiAnalysisPanel
+                analysis={analysis}
+                topPostsAI={acc.topPostsAI || []}
+                bottomPosts={acc.bottomPosts || []}
+              />
+            )}
           </div>
         );
       })}
