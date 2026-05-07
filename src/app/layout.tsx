@@ -14,8 +14,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "InstaTrend",
-  description: "Instagram Trend Analysis Tool",
+  title: "Trend Hub",
+  description: "SNSトレンド分析ツール",
 };
 
 export default function RootLayout({
