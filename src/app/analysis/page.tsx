@@ -130,7 +130,7 @@ function AiAnalysisPanel({ analysis, topPostsAI, bottomPosts }: { analysis: any;
               <h4 style={{ fontSize: '16px', fontWeight: '900', color: '#0F172A', margin: 0 }}>{s.label}</h4>
             </div>
             <div style={{ fontSize: '11px', color: '#475569', fontWeight: '600', marginBottom: '16px', lineHeight: '1.6', padding: '10px 14px', borderRadius: '10px', borderLeft: `3px solid ${s.color}`, backgroundColor: 'rgba(255,255,255,0.6)' }}>
-              💡 {s.hint}
+              {s.hint}
             </div>
             <HighlightedTextAnalysis text={analysis[s.key]} />
             {s.posts && s.posts.length > 0 && <PostThumbnailRow posts={s.posts} label={s.postsLabel} />}
