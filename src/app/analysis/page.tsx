@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { Search, RefreshCcw, X, Camera, Heart, MessageCircle, ExternalLink, Trophy } from 'lucide-react';
+import { Search, RefreshCcw, X, Camera, Heart, MessageCircle, ExternalLink, Trophy, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import { Play } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 
@@ -19,15 +19,60 @@ function formatDate(ts: string) {
   return new Date(ts).toLocaleDateString('ja-JP', { month: 'numeric', day: 'numeric' });
 }
 
-function TopPostsSection({ accounts }: { accounts: any[] }) {
+function AiAnalysisPanel({ analysis }: { analysis: any }) {
+  const sections = [
+    { key: 'strengths',           label: '強み',               color: '#10B981', bg: '#F0FDF4', border: '#A7F3D0' },
+    { key: 'weaknesses',          label: '改善点',             color: '#F59E0B', bg: '#FFFBEB', border: '#FDE68A' },
+    { key: 'highEngagementTraits', label: '高EG投稿の型',       color: '#3B82F6', bg: '#EFF6FF', border: '#BFDBFE' },
+    { key: 'lowEngagementTraits',  label: '低EG投稿の型',       color: '#94A3B8', bg: '#F8FAFC', border: '#E2E8F0' },
+    { key: 'strategy',             label: '90日戦略アドバイス', color: '#EC4899', bg: '#FDF2F8', border: '#FBCFE8' },
+  ];
+
+  return (
+    <div style={{ marginTop: '28px', paddingTop: '28px', borderTop: '1px solid #F1F5F9' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '20px' }}>
+        <Sparkles size={18} color="#EC4899" />
+        <span style={{ fontSize: '16px', fontWeight: '800', color: '#0F172A' }}>AIインサイト</span>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+        {sections.map(s => (
+          <div key={s.key} style={{ backgroundColor: s.bg, border: `1px solid ${s.border}`, borderRadius: '16px', padding: '20px', gridColumn: s.key === 'strategy' ? '1 / -1' : 'auto' }}>
+            <div style={{ fontSize: '11px', fontWeight: '800', color: s.color, textTransform: 'uppercase', marginBottom: '10px', letterSpacing: '0.05em' }}>{s.label}</div>
+            <p style={{ fontSize: '13px', color: '#1E293B', lineHeight: '1.75', margin: 0, whiteSpace: 'pre-line' }}>{analysis[s.key]}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TopPostsSection({ accounts, aiAnalyses, analyzingAccounts, onAnalyze }: {
+  accounts: any[];
+  aiAnalyses: Record<string, any>;
+  analyzingAccounts: Set<string>;
+  onAnalyze: (acc: any) => void;
+}) {
+  const [expandedAnalysis, setExpandedAnalysis] = React.useState<Set<string>>(new Set());
+
   if (accounts.length === 0) return null;
+
+  const toggleExpand = (username: string) => {
+    setExpandedAnalysis(prev => {
+      const next = new Set(prev);
+      if (next.has(username)) next.delete(username);
+      else next.add(username);
+      return next;
+    });
+  };
 
   return (
     <div style={{ marginBottom: '40px' }}>
       {accounts.map(acc => {
-        // フォロワー数に基づいたエンゲージメント率の計算
         const followers = acc.stats.followers || 1;
-        
+        const isAnalyzing = analyzingAccounts.has(acc.username);
+        const analysis = aiAnalyses[acc.username];
+        const isExpanded = expandedAnalysis.has(acc.username);
+
         return (
           <div key={acc.username} style={{ backgroundColor: 'white', padding: '32px', borderRadius: '24px', border: '1px solid #F1F5F9', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)', marginBottom: '32px' }}>
             {/* セクションヘッダー */}
@@ -45,8 +90,29 @@ function TopPostsSection({ accounts }: { accounts: any[] }) {
                   </p>
                 </div>
               </div>
-              <div style={{ backgroundColor: '#F8FAFC', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '700', color: '#64748B', border: '1px solid #E2E8F0' }}>
-                抽出範囲: 直近100件
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                {analysis ? (
+                  <button
+                    onClick={() => toggleExpand(acc.username)}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', backgroundColor: '#FDF2F8', border: '1px solid #FBCFE8', borderRadius: '10px', color: '#EC4899', fontSize: '13px', fontWeight: '700', cursor: 'pointer' }}
+                  >
+                    <Sparkles size={14} />
+                    AIインサイト
+                    {isExpanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => onAnalyze(acc)}
+                    disabled={isAnalyzing}
+                    style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '8px 16px', background: 'linear-gradient(135deg, #EC4899, #8B5CF6)', border: 'none', borderRadius: '10px', color: 'white', fontSize: '13px', fontWeight: '700', cursor: isAnalyzing ? 'not-allowed' : 'pointer', opacity: isAnalyzing ? 0.7 : 1 }}
+                  >
+                    {isAnalyzing ? <RefreshCcw size={14} className="animate-spin" /> : <Sparkles size={14} />}
+                    {isAnalyzing ? 'AI分析中...' : 'AI分析'}
+                  </button>
+                )}
+                <div style={{ backgroundColor: '#F8FAFC', padding: '6px 12px', borderRadius: '8px', fontSize: '12px', fontWeight: '700', color: '#64748B', border: '1px solid #E2E8F0' }}>
+                  抽出範囲: 直近100件
+                </div>
               </div>
             </div>
 
@@ -136,6 +202,9 @@ function TopPostsSection({ accounts }: { accounts: any[] }) {
                 データ参照範囲：直近100件の投稿（約2ヶ月分）を分析対象としています
               </p>
             </div>
+
+            {/* AI分析結果 */}
+            {analysis && isExpanded && <AiAnalysisPanel analysis={analysis} />}
           </div>
         );
       })}
@@ -144,12 +213,14 @@ function TopPostsSection({ accounts }: { accounts: any[] }) {
 }
 
 export default function InstagramAnalysisPage() {
-  const [usernameInput, setUsernameInput] = useState('');
-  const [accounts, setAccounts]           = useState<any[]>([]);
-  const [isLoading, setIsLoading]         = useState(false);
-  const [apiError, setApiError]           = useState<string | null>(null);
-  const [metric, setMetric]               = useState<'likes' | 'posts'>('likes');
-  const [history, setHistory]             = useState<string[]>([]);
+  const [usernameInput, setUsernameInput]   = useState('');
+  const [accounts, setAccounts]             = useState<any[]>([]);
+  const [isLoading, setIsLoading]           = useState(false);
+  const [apiError, setApiError]             = useState<string | null>(null);
+  const [metric, setMetric]                 = useState<'likes' | 'posts'>('likes');
+  const [history, setHistory]               = useState<string[]>([]);
+  const [aiAnalyses, setAiAnalyses]         = useState<Record<string, any>>({});
+  const [analyzingAccounts, setAnalyzingAccounts] = useState<Set<string>>(new Set());
 
   // 履歴の読み込み
   React.useEffect(() => {
@@ -200,7 +271,34 @@ export default function InstagramAnalysisPage() {
     }
   };
 
-  const removeAccount = (username: string) => setAccounts(prev => prev.filter(a => a.username !== username));
+  const removeAccount = (username: string) => {
+    setAccounts(prev => prev.filter(a => a.username !== username));
+    setAiAnalyses(prev => { const next = { ...prev }; delete next[username]; return next; });
+  };
+
+  const analyzeAccount = async (acc: any) => {
+    setAnalyzingAccounts(prev => new Set(prev).add(acc.username));
+    setApiError(null);
+    try {
+      const res = await fetch('/api/analyze-account', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          username:    acc.username,
+          stats:       acc.stats,
+          topPostsAI:  acc.topPostsAI,
+          bottomPosts: acc.bottomPosts,
+        }),
+      });
+      const data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setAiAnalyses(prev => ({ ...prev, [acc.username]: data.analysis }));
+    } catch (err: any) {
+      setApiError(`AI分析エラー: ${err.message}`);
+    } finally {
+      setAnalyzingAccounts(prev => { const next = new Set(prev); next.delete(acc.username); return next; });
+    }
+  };
 
   const getDailyChartData = () => {
     if (accounts.length === 0) return [];
@@ -348,7 +446,12 @@ export default function InstagramAnalysisPage() {
         </div>
 
         {/* トップ3投稿セクション */}
-        <TopPostsSection accounts={accounts} />
+        <TopPostsSection
+          accounts={accounts}
+          aiAnalyses={aiAnalyses}
+          analyzingAccounts={analyzingAccounts}
+          onAnalyze={analyzeAccount}
+        />
 
         {/* 日次エンゲージメントチャート */}
         {accounts.length > 0 && (

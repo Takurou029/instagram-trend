@@ -77,22 +77,24 @@ export async function GET(request: Request) {
       });
     });
 
-    const topPosts = [...media]
-      .sort((a, b) => (b.like_count || 0) - (a.like_count || 0))
-      .slice(0, 3)
-      .map(m => ({
-        id:        m.id,
-        caption:   m.caption ? m.caption.slice(0, 60) + (m.caption.length > 60 ? '…' : '') : '',
-        mediaType: m.media_type === 'VIDEO' ? 'REELS'
-                 : m.media_type === 'CAROUSEL_ALBUM' ? 'CAROUSEL'
-                 : 'IMAGE',
-        thumbnail: m.media_type === 'VIDEO' ? (m.thumbnail_url || m.media_url) : m.media_url,
-        permalink: m.permalink,
-        likes:     m.like_count     || 0,
-        comments:  m.comments_count || 0,
-        views:     m.video_view_count || 0,
-        timestamp: m.timestamp,
-      }));
+    const mapPost = (m: any) => ({
+      id:        m.id,
+      caption:   m.caption ? m.caption.slice(0, 60) + (m.caption.length > 60 ? '…' : '') : '',
+      mediaType: m.media_type === 'VIDEO' ? 'REELS'
+               : m.media_type === 'CAROUSEL_ALBUM' ? 'CAROUSEL'
+               : 'IMAGE',
+      thumbnail: m.media_type === 'VIDEO' ? (m.thumbnail_url || m.media_url) : m.media_url,
+      permalink: m.permalink,
+      likes:     m.like_count     || 0,
+      comments:  m.comments_count || 0,
+      views:     m.video_view_count || 0,
+      timestamp: m.timestamp,
+    });
+
+    const sortedByLikes = [...media].sort((a, b) => (b.like_count || 0) - (a.like_count || 0));
+    const topPosts    = sortedByLikes.slice(0, 3).map(mapPost);
+    const topPostsAI  = sortedByLikes.slice(0, 5).map(mapPost);
+    const bottomPosts = sortedByLikes.slice(-5).map(mapPost);
 
     return Response.json({
       name:      userData.name,
@@ -102,6 +104,8 @@ export async function GET(request: Request) {
       dailyChart,
       monthlyChart,
       topPosts,
+      topPostsAI,
+      bottomPosts,
     });
 
   } catch (error: any) {
