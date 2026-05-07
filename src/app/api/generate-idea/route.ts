@@ -1,9 +1,13 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-
 export async function POST(req: Request) {
   try {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      return Response.json({ error: 'Gemini APIキーが設定されていません。Vercelの環境変数を確認してください。' }, { status: 500 });
+    }
+    const genAI = new GoogleGenerativeAI(apiKey);
+
     const { posts, keyword } = await req.json();
 
     if (!posts || posts.length === 0) {
