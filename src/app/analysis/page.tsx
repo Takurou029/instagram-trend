@@ -57,7 +57,7 @@ function PostThumbnailRow({ posts, label }: { posts: any[], label: string }) {
             onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
           >
             {p.thumbnail
-              ? <Image src={p.thumbnail} alt="" fill style={{ objectFit: 'cover' }} />
+              ? <Image src={p.thumbnail} alt="" fill unoptimized style={{ objectFit: 'cover' }} />
               : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Camera size={16} color="#475569" /></div>
             }
             <div style={{ position: 'absolute', bottom: '3px', left: '3px', right: '3px', display: 'flex', alignItems: 'center', gap: '2px', backgroundColor: 'rgba(0,0,0,0.72)', borderRadius: '4px', padding: '2px 4px' }}>
@@ -225,7 +225,7 @@ function TopPostsSection({ accounts, aiAnalyses, analyzingAccounts, onAnalyze }:
                     {/* サムネイル */}
                     <div style={{ position: 'relative', width: '100%', aspectRatio: '1', backgroundColor: '#000', overflow: 'hidden' }}>
                       {post.thumbnail
-                        ? <Image src={post.thumbnail} alt="" fill style={{ objectFit: 'cover' }} />
+                        ? <Image src={post.thumbnail} alt="" fill unoptimized style={{ objectFit: 'cover' }} />
                         : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Camera size={32} color="#475569" /></div>
                       }
                       {/* 順位バッジ */}
@@ -513,7 +513,7 @@ export default function InstagramAnalysisPage() {
               <div style={{ height: '6px', width: '100%', backgroundColor: acc.color }} />
               <div style={{ padding: '32px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '20px', marginBottom: '32px' }}>
-                  <Image src={acc.avatar} alt="" width={64} height={64} style={{ borderRadius: '50%', border: `3px solid ${acc.color}`, padding: '2px' }} />
+                  <Image src={acc.avatar} alt="" width={64} height={64} unoptimized style={{ borderRadius: '50%', border: `3px solid ${acc.color}`, padding: '2px' }} />
                   <div>
                     <h3 style={{ fontWeight: '800', fontSize: '20px', color: '#0F172A', margin: 0 }}>{acc.name}</h3>
                     <span style={{ color: '#94A3B8', fontSize: '14px' }}>@{acc.username}</span>

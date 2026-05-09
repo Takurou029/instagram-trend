@@ -166,7 +166,7 @@ export default function HomePage() {
 
                 {/* アカウント基本情報 */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '28px' }}>
-                  <Image src={acc.avatar} alt="" width={56} height={56} style={{ borderRadius: '50%', border: '2px solid #F1F5F9', padding: '2px' }} />
+                  <Image src={acc.avatar} alt="" width={56} height={56} unoptimized style={{ borderRadius: '50%', border: '2px solid #F1F5F9', padding: '2px' }} />
                   <div>
                     <h3 style={{ fontSize: '18px', fontWeight: '800', color: '#0F172A', margin: 0 }}>{acc.name}</h3>
                     <span style={{ color: '#94A3B8', fontSize: '13px' }}>@{acc.username}</span>

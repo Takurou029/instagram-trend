@@ -83,7 +83,7 @@ function ReferencedPosts({ ids, allPosts }: { ids?: string[], allPosts: any[] })
             {p.type === 'REELS' ? (
               <video src={p.thumbnail} muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             ) : (
-              <Image src={p.thumbnail} alt="" fill style={{ objectFit: 'cover' }} />
+              <Image src={p.thumbnail} alt="" fill unoptimized style={{ objectFit: 'cover' }} />
             )}
           </a>
         ))}
@@ -464,7 +464,7 @@ export default function TrendResearchPage() {
                       style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} 
                     />
                   ) : (
-                    <Image src={post.thumbnail} alt="" fill style={{ objectFit: 'cover' }} />
+                    <Image src={post.thumbnail} alt="" fill unoptimized style={{ objectFit: 'cover' }} />
                   )}
                   {/* バッジ類 */}
                   <div style={{ position: 'absolute', top: '12px', left: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
