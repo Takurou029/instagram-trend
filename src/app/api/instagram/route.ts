@@ -1,3 +1,9 @@
+function imgProxy(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const b64url = Buffer.from(url).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  return `/api/img?u=${b64url}`;
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -83,7 +89,7 @@ export async function GET(request: Request) {
       mediaType: m.media_type === 'VIDEO' ? 'REELS'
                : m.media_type === 'CAROUSEL_ALBUM' ? 'CAROUSEL'
                : 'IMAGE',
-      thumbnail: m.media_type === 'VIDEO' ? (m.thumbnail_url || m.media_url) : m.media_url,
+      thumbnail: imgProxy(m.media_type === 'VIDEO' ? (m.thumbnail_url || m.media_url) : m.media_url),
       permalink: m.permalink,
       likes:     m.like_count     || 0,
       comments:  m.comments_count || 0,
@@ -99,7 +105,7 @@ export async function GET(request: Request) {
     return Response.json({
       name:      userData.name,
       username:  userData.username,
-      avatar:    userData.profile_picture_url,
+      avatar:    imgProxy(userData.profile_picture_url),
       stats,
       dailyChart,
       monthlyChart,

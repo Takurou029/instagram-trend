@@ -204,9 +204,6 @@ export default function HomePage() {
                   <a href={`/analysis?username=${acc.username}`} style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', backgroundColor: '#F8FAFC', color: '#0F172A', padding: '12px', borderRadius: '12px', fontSize: '13px', fontWeight: '700', textDecoration: 'none', border: '1px solid #E2E8F0' }}>
                     <BarChart3 size={16} /> 詳細分析
                   </a>
-                  <a href={`https://instagram.com/${acc.username}`} target="_blank" rel="noopener noreferrer" style={{ padding: '12px', backgroundColor: 'white', color: '#94A3B8', border: '1px solid #E2E8F0', borderRadius: '12px' }}>
-                    <ExternalLink size={16} />
-                  </a>
                 </div>
               </div>
             );
@@ -219,7 +216,7 @@ export default function HomePage() {
                 <TrendingUp size={40} style={{ opacity: 0.2 }} />
               </div>
               <h2 style={{ fontSize: '20px', fontWeight: '800', color: '#0F172A', marginBottom: '8px' }}>ウォッチリストは空です</h2>
-              <p style={{ fontSize: '15px', marginBottom: '32px' }}>定点観測したいInstagramアカウントを追加してください（最大6件）</p>
+              <p style={{ fontSize: '15px', marginBottom: '32px' }}>定点観測したいアカウントを追加してください（最大6件）</p>
             </div>
           )}
 

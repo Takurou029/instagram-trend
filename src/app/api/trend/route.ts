@@ -2,6 +2,12 @@
 const hashtagIdCache = new Map<string, { id: string; cachedAt: number }>();
 const CACHE_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7日間
 
+function imgProxy(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const b64url = Buffer.from(url).toString('base64').replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+  return `/api/img?u=${b64url}`;
+}
+
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
@@ -115,8 +121,8 @@ export async function GET(request: Request) {
 
       return {
         id:        m.id,
-        title:     m.caption ? m.caption.slice(0, 80) + '…' : 'Instagram Post',
-        thumbnail: m.media_url,
+        title:     m.caption ? m.caption.slice(0, 80) + '…' : 'SNS Post',
+        thumbnail: imgProxy(m.media_url),
         url:       m.permalink,
         likes,
         comments,
