@@ -81,7 +81,9 @@ function ReferencedPosts({ ids, allPosts }: { ids?: string[], allPosts: any[] })
             onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
           >
             {p.type === 'REELS' ? (
-              <video src={p.thumbnail} muted playsInline style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#1E293B' }}>
+                <span style={{ fontSize: '8px', fontWeight: '900', color: '#8B5CF6', backgroundColor: '#F5F3FF', padding: '2px 5px', borderRadius: '4px' }}>REELS</span>
+              </div>
             ) : (
               <Image src={p.thumbnail} alt="" fill unoptimized style={{ objectFit: 'cover' }} />
             )}
@@ -448,7 +450,7 @@ export default function TrendResearchPage() {
                       muted 
                       playsInline 
                       loop 
-                      preload="auto"
+                      preload="none"
                       onMouseEnter={async (e) => {
                         const v = e.currentTarget;
                         try {
