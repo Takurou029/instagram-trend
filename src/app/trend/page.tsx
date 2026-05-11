@@ -450,7 +450,7 @@ export default function TrendResearchPage() {
                       muted 
                       playsInline 
                       loop 
-                      preload="none"
+                      preload="metadata"
                       onMouseEnter={async (e) => {
                         const v = e.currentTarget;
                         try {

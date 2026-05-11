@@ -20,7 +20,7 @@ function formatDate(ts: string) {
 }
 
 function HighlightedTextAnalysis({ text }: { text: string }) {
-  if (!text) return null;
+  if (!text || typeof text !== 'string') return null;
   const parts = text.split(/(\【.*?\】)/g);
   return (
     <>
@@ -56,10 +56,20 @@ function PostThumbnailRow({ posts, label }: { posts: any[], label: string }) {
             onMouseEnter={e => { e.currentTarget.style.transform = 'scale(1.1)'; }}
             onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; }}
           >
-            {p.thumbnail
-              ? <Image src={p.thumbnail} alt="" fill unoptimized style={{ objectFit: 'cover' }} />
-              : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Camera size={16} color="#475569" /></div>
-            }
+            {p.thumbnail ? (
+              <>
+                <Image src={p.thumbnail} alt="" fill unoptimized loading="lazy" style={{ objectFit: 'cover' }} />
+                {p.mediaType === 'REELS' && (
+                  <div style={{ position: 'absolute', bottom: '2px', left: '2px', backgroundColor: 'rgba(139,92,246,0.85)', borderRadius: '3px', padding: '1px 3px', display: 'flex', alignItems: 'center' }}>
+                    <Play size={7} fill="white" color="white" />
+                  </div>
+                )}
+              </>
+            ) : (
+              <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: '#1E293B' }}>
+                {p.mediaType === 'REELS' ? <Play size={14} color="#8B5CF6" /> : <Camera size={16} color="#475569" />}
+              </div>
+            )}
             <div style={{ position: 'absolute', bottom: '3px', left: '3px', right: '3px', display: 'flex', alignItems: 'center', gap: '2px', backgroundColor: 'rgba(0,0,0,0.72)', borderRadius: '4px', padding: '2px 4px' }}>
               <Heart size={7} fill="white" color="white" />
               <span style={{ fontSize: '8px', color: 'white', fontWeight: '800' }}>{p.likes >= 1000 ? `${(p.likes/1000).toFixed(1)}k` : p.likes}</span>
