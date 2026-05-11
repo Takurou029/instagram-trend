@@ -2,7 +2,7 @@
 
 import React, { useState, useMemo } from 'react';
 import Image from 'next/image';
-import { Search, Heart, MessageCircle, ExternalLink, TrendingUp, Camera, Download, Flame, X, Sparkles, RefreshCcw, Zap } from 'lucide-react';
+import { Search, Heart, MessageCircle, ExternalLink, TrendingUp, Camera, Download, Flame, X, Sparkles, RefreshCcw, Zap, Play } from 'lucide-react';
 import Sidebar from '@/components/Sidebar';
 
 function formatAge(timestamp: string) {
@@ -443,28 +443,31 @@ export default function TrendResearchPage() {
                 onMouseLeave={e => { (e.currentTarget as HTMLElement).style.transform = ''; (e.currentTarget as HTMLElement).style.boxShadow = '0 2px 4px rgba(0,0,0,0.02)'; }}
               >
                 {/* サムネイル */}
-                <div style={{ position: 'relative', width: '100%', aspectRatio: '9/16', backgroundColor: '#0F172A', overflow: 'hidden' }}>
+                <div className="group" style={{ position: 'relative', width: '100%', aspectRatio: '9/16', backgroundColor: '#0F172A', overflow: 'hidden' }}>
                   {post.type === 'REELS' ? (
-                    <video 
-                      src={post.thumbnail} 
-                      muted 
-                      playsInline 
-                      loop 
-                      preload="metadata"
-                      onMouseEnter={async (e) => {
-                        const v = e.currentTarget;
-                        try {
-                          await v.play();
-                        } catch {
-                          // Ignore
-                        }
-                      }} 
-                      onMouseLeave={(e) => {
-                        e.currentTarget.pause();
-                        e.currentTarget.currentTime = 0;
-                      }}
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} 
-                    />
+                    <>
+                      <video
+                        src={post.thumbnail}
+                        muted
+                        playsInline
+                        loop
+                        preload="metadata"
+                        onMouseEnter={async (e) => {
+                          const v = e.currentTarget;
+                          try { await v.play(); } catch {}
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.pause();
+                          e.currentTarget.currentTime = 0;
+                        }}
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                      />
+                      <div className="group-hover:opacity-0 transition-opacity duration-200" style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
+                        <div style={{ width: '44px', height: '44px', backgroundColor: 'rgba(255,255,255,0.88)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 12px rgba(0,0,0,0.35)' }}>
+                          <Play size={20} fill="#0F172A" color="#0F172A" style={{ marginLeft: '2px' }} />
+                        </div>
+                      </div>
+                    </>
                   ) : (
                     <Image src={post.thumbnail} alt="" fill unoptimized style={{ objectFit: 'cover' }} />
                   )}

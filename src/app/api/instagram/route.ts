@@ -89,7 +89,7 @@ export async function GET(request: Request) {
       mediaType: m.media_type === 'VIDEO' ? 'REELS'
                : m.media_type === 'CAROUSEL_ALBUM' ? 'CAROUSEL'
                : 'IMAGE',
-      thumbnail: imgProxy(m.media_type === 'VIDEO' ? (m.thumbnail_url || m.media_url) : m.media_url),
+      thumbnail: imgProxy(m.media_type === 'VIDEO' ? (m.thumbnail_url || null) : m.media_url),
       permalink: m.permalink,
       likes:     m.like_count     || 0,
       comments:  m.comments_count || 0,

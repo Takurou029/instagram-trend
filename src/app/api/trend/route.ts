@@ -66,13 +66,12 @@ export async function GET(request: Request) {
 
     const hashTagCount = await fetchHashtagCount(hashtagId);
 
-    // 2. top_media と recent_media を取得 (リミットを 10 に下げて負荷を最小化)
+    // 2. top_media と recent_media を取得
     const lightweightFields = 'id,media_type,media_url,permalink,like_count,caption,comments_count,timestamp';
-    
+
     const fetchMedia = async (type: 'top_media' | 'recent_media') => {
       try {
-        // v19.0 に戻し、limit を 10 に設定
-        const url = `https://graph.facebook.com/v19.0/${hashtagId}/${type}?user_id=${businessId}&fields=${lightweightFields}&limit=10&access_token=${accessToken}`;
+        const url = `https://graph.facebook.com/v19.0/${hashtagId}/${type}?user_id=${businessId}&fields=${lightweightFields}&limit=25&access_token=${accessToken}`;
         const res = await fetch(url);
         const data = await res.json();
         if (data.error) {
